@@ -24,12 +24,15 @@ const carouselData = [
     }
 ];
 
-
+router.get('/', (req, res) => {
+    res.send("Hello World")
+});
 
 
 router.get('/home/banner', (req, res) => {
+    console.log("获取成功");
     res.json({
-        code: 200,
+        code: 100,
         message: "ok",
         result: carouselData
     });
@@ -39,11 +42,9 @@ router.get('/home/banner', (req, res) => {
 
 
 
+
 // 定义一个 保存的位置
 let savePath = path.join(__dirname, `../upload/cart/`);
-
-
-
 
 
 // 创建一个multer实例，设置上传文件的保存目录
