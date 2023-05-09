@@ -30,9 +30,8 @@ router.get('/', (req, res) => {
 
 
 router.get('/home/banner', (req, res) => {
-    console.log("获取成功");
     res.json({
-        code: 100,
+        code: 200,
         message: "ok",
         result: carouselData
     });

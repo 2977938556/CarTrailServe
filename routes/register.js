@@ -3,46 +3,13 @@ const router = express.Router();
 // 导入User数据库
 const User = require('../models/User')
 const { v1, v4 } = require('uuid');// 生成随机id
-const bcrypt = require('bcrypt');// 加密密码
+const { PasswordEncryption } = require('../utils/encryption.js')
 
 
-
-
-// 加密函数
-let saltRounds = 10;// 这个是控制加密的级别
-function PasswordEncryption(password) {
-    return new Promise((resolve, reject) => {
-        bcrypt.genSalt(saltRounds, (err, salt) => {
-            bcrypt.hash(password, salt, (err, hash) => {
-                // 处理加密后的密码
-                if (err) {
-                    reject(false)
-                } else {
-                    resolve(hash)
-                }
-            });
-        });
-    })
-}
-
-
-// 解密模块
-function decryptPssword(password, hashedPassword) {
-    return new Promise((resolve, reject) => {
-        bcrypt.compare(password, hashedPassword, (err, result) => {
-            if (err || result == false) {
-                reject(false)
-            } else {
-                resolve(true)
-            }
-        });
-    })
-}
 
 
 // req.query获取的是get请求的书 【query】
 // req.body 获取的是post请求的数据 【params 通常获取动态数据】
-
 router.post('/user/register', async (req, res) => {
     let { username, password, mobile } = req.body
 
@@ -75,40 +42,32 @@ router.post('/user/register', async (req, res) => {
             } else {
                 // 注册
                 // 手机号和名称未被注册，创建用户
-                try {
-                    let s = await User.create({
-                        username: username,
-                        password: await PasswordEncryption(password),
-                        mobile: mobile,
-                        user_id: v1()
-                    });
+                await User.create({
+                    username: username,
+                    password: await PasswordEncryption(password),
+                    mobile: mobile,
+                    user_id: v1()
+                });
 
-                    res.status(201).json({
-                        code: 201,
+                res.status(201).json({
+                    code: 201,
+                    message: "注册成功",
+                    result: {
                         message: "注册成功",
-                        result: {
-                            message: "注册成功",
-                            username: username
-                        },
-                    });
-                } catch (err) {
-                    res.status(500).json({
-                        code: 500,
-                        message: "服务器错误3",
-                        result: {
-                            message: "服务器错误",
-                        },
-                    });
-                }
+                        username: username
+                    },
+                });
+
 
             }
 
         }
     } catch (err) {
+        console.log(err);
         // 所有服务器错误或者数据库错误就会进入到这里
         res.status(500).json({
             code: 500,
-            message: "服务器错误1",
+            message: "服务器错误",
             result: {
                 message: "服务器错误",
             },

@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 const path = require('path')
 const mongoose = require('mongoose')
+const { authMiddleware } = require('./utils/tokenVerfy.js')
 
 
 
@@ -34,18 +35,24 @@ app.use('/public/uploads/cart', express.static(path.join(__dirname, '/public/upl
 // 导入路由
 const HomeRouter = require('./routes/home.js')// 首页
 const RegisterRouter = require('./routes/register.js'); // 注册
+const LoginRoutert = require('./routes/login.js')// 登录
 
 
 // 允许跨域
 app.use(cors());
 
 
+
 // 解析数据
 app.use(express.urlencoded({ extended: true }));
 
+app.use(authMiddleware)
+
+
 // 配置路由
-app.use('/api', HomeRouter); // 首页的数据
+app.use('/api', HomeRouter); // 首页
 app.use('/api', RegisterRouter)// 注册
+app.use('/api', LoginRoutert)// 登录
 
 
 app.listen(3000, () => {

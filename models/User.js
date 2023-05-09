@@ -13,7 +13,10 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin', 'ban'],
         default: 'user'
     }
-});
+})
+
+
+
 
 const User = mongoose.model('User', userSchema);
 
