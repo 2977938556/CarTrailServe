@@ -5,7 +5,6 @@ const { CheckToken } = require('./token')
 
 let whiteList = ['/login', '/register']
 exports.authMiddleware = (req, res, next) => {
-    console.log("获取的url", req.url);
     // 从请求头中获取token
 
     // 验证是否在白名单中的数据是的话就进行下一步操作不进行验证
@@ -17,13 +16,14 @@ exports.authMiddleware = (req, res, next) => {
 
     // 判断是否有token 
     if (!token) {
-        return res.status(401).json({ message: '没有登录', result: { message: '请先登录' } });
+        return res.status(401).json({ message: '登录已过期，请重新登录', result: { message: '登录已过期，请重新登录' } });
     }
 
     CheckToken(token).then(result => {
         req.user = result.decoded; // 将解码后的用户信息存储到请求对象中
         next();
     }).catch(e => {
+        console.log("失效了02");
         return res.status(401).json({ message: '登录已过期，请重新登录', result: { message: '登录已过期，请重新登录' } });
     })
 }

@@ -13,7 +13,7 @@ const expires = now + 60
 // 生成token
 exports.AddToken = (username, time) => {
     return new Promise((reolve, reject) => {
-        const token = jwt.sign({ username }, secret, { expiresIn: `30s` });
+        const token = jwt.sign({ username }, secret, { expiresIn: `1h` });
         if (token != "") {
             reolve(token)
         }

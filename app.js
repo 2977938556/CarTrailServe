@@ -1,6 +1,6 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
+const express = require('express')
+const app = express()
+const cors = require('cors')
 const path = require('path')
 const mongoose = require('mongoose')
 const { authMiddleware } = require('./utils/tokenVerfy.js')
@@ -13,17 +13,17 @@ mongoose.connect('mongodb://127.0.0.1:27017/CatTrail', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
-    console.log('数据库链接成功');
+    console.log('数据库链接成功')
 }).catch((err) => {
-    console.log("数据库链接失败 error");
-});
+    console.log("数据库链接失败 error")
+})
 
 
 
 
 
 //配置获取post请求体
-var bodyParser = require("body-parser");
+var bodyParser = require("body-parser")
 app.use(bodyParser.json({ limit: '100mb' }))
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: false }))
 
@@ -34,27 +34,29 @@ app.use('/public/uploads/cart', express.static(path.join(__dirname, '/public/upl
 
 // 导入路由
 const HomeRouter = require('./routes/home.js')// 首页
-const RegisterRouter = require('./routes/register.js'); // 注册
+const RegisterRouter = require('./routes/register.js') // 注册
 const LoginRoutert = require('./routes/login.js')// 登录
-
+const ReleaseRouter = require('./routes/release.js')// 上传模块
 
 // 允许跨域
-app.use(cors());
-
-
+app.use(cors())
 
 // 解析数据
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }))
 
+
+// 验证tken
 app.use(authMiddleware)
 
 
+
 // 配置路由
-app.use('/api', HomeRouter); // 首页
+app.use('/api', HomeRouter)  // 首页
 app.use('/api', RegisterRouter)// 注册
 app.use('/api', LoginRoutert)// 登录
+app.use('/api', ReleaseRouter)// 上传
 
 
 app.listen(3000, () => {
-    console.log('服务器启动成功,请访问：localhost:3000');
-});
+    console.log('服务器启动成功,请访问：localhost:3000')
+}) 
