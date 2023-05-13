@@ -14,6 +14,7 @@ router.post('/user/login', (req, res) => {
     // 如果查询到了那么就将当前的密码进行比对
     // 明天早上完成加油啦 FeiMao@110
 
+
     try {
         // 查询用户
         User.findOne({
@@ -40,7 +41,7 @@ router.post('/user/login', (req, res) => {
                         result: {
                             message: "登录成功",
                             user: users,
-                            token: await AddToken(username)
+                            token: await AddToken(users.user_id)
                         },
                     })
                 }).catch(err => {

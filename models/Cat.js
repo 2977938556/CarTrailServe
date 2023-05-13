@@ -7,8 +7,8 @@ const CatSchema = new mongoose.Schema({
     content: { type: String, required: true },// 内容
     addrs: { type: Object, required: true },// 发布地区
     imageUrl: { type: Array, require: true },// 图片数据存储的是图片地址
-    lable: { type: Array, require: true },
-    isApproved: { type: Boolean, default: false }, // 是否审核
+    lable: { type: Array, require: true },// 标签
+    isApproved: { type: Boolean, default: true }, // 是否审核
     created_at: { type: Date, default: Date.now },// 创建时间
     updated_at: { type: Date, default: Date.now }// 更新时间
 })

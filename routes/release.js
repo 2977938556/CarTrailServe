@@ -99,6 +99,7 @@ router.post('/release/filte', async (req, res) => {
                 return `http://${serve}:3000/public/uploads/cart/${folderName}/${imgName}`
             })
 
+
             // 设计然后加入用户id进行连表查询
             let cat = await Cat.create({
                 cat_id: `${v4()}-${Math.random().toString(36).substring(2, 10)}`,// 帖子的id
@@ -111,6 +112,7 @@ router.post('/release/filte', async (req, res) => {
             })
             // 延迟函数
             await delay(3000)
+
 
             // 存储成功返回数据给前端
             return res.status(201).json({
