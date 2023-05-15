@@ -4,6 +4,9 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid')
 const fs = require('fs');
 const Cat = require('../models/Cat.js')
+const { delay } = require('../utils/UniversalFn.js');// 通用函数
+const { addListener } = require('process');
+
 
 
 
@@ -30,12 +33,14 @@ const carouselData = [
 
 // 200 不创建资源但是返回资源
 // 201  创建资源成功
-// 400
-// 401
+// 400 服务器错误
+// 401 需要验证身份
 
 
 
-router.get('/home/banner', (req, res) => {
+router.get('/home/banner', async (req, res) => {
+    await delay(3000)
+
     // console.log(req.user);
     res.json({
         code: 200,
@@ -48,76 +53,122 @@ router.get('/home/banner', (req, res) => {
 
 
 
+
+
+
+
+async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendBar, userData }) {
+    // 设置的默认值
+    page = page || 1
+    pageSize = pageSize || 3
+
+    // 先判断是否是有地区的
+    return new Promise(async (reolve, reject) => {
+        let query = {}
+        if (cityAddrs == null || JSON.stringify(cityAddrs) == "{}") {
+            console.log("到这里了");
+            query = {}
+        }
+        if (cityAddrs != null && JSON.stringify(cityAddrs) != "{}") {
+            query = { "addrs.fullLocation": { $regex: ".*" + cityAddrs?.changeResult?.provinceName + ".*" } };// 查询条件
+        }
+
+        console.log(query);
+        // 设置是最新还是推荐
+        let stores = CatRecommendBar == "B" ? 1 : -1
+
+        // 查询总记录数，并计算总页数
+        var total = await Cat.collection.countDocuments(query);
+        var pageCount = Math.ceil(total / pageSize);
+
+
+        if (CatRecommendBar == "B") {
+            try {
+                // 查询当前页的数据，并进行分页
+                var data = await Cat.collection.find(query).sort({ updated_at: stores }).skip((page - 1) * pageSize).limit(pageSize).toArray();
+                return reolve({
+                    result: data,
+                    total,
+                    pageCount,
+                    message: "数据获取成功",
+                    valve: true
+                })
+            } catch (err) {
+                reject({
+                    result: [],
+                    total,
+                    pageCount,
+                    message: "数据获取失败",
+                    valve: false
+                })
+            }
+        }
+
+        if (CatRecommendBar == "C") {
+            try {
+                // 查询当前页的数据，并进行分页
+                let data = await Cat.collection.aggregate().sort({ updated_at: stores }).skip((page - 1) * pageSize).limit(pageSize).toArray();
+                return reolve({
+                    result: data,
+                    message: "数据获取成功",
+                    valve: true
+                })
+            } catch (err) {
+                reject({
+                    result: [],
+                    message: "数据获取失败",
+                    valve: false
+                })
+            }
+        }
+
+        if (CatRecommendBar == "A") {
+
+        }
+    })
+}
+
+
+
+
+
+
 // 获取推荐模块
 router.post('/home/recommend', async (req, res) => {
     let { page, pageSize, cityAddrs, CatRecommendBar, userData } = req.body;
-    console.log(cityAddrs);
 
-    // 设置的默认值
-    let pages = page || 1;
-    let pageSizes = pageSize || 6;
+    try {
 
-    var query = {};// 查询条件
-    // 判断条件
-    if (CatRecommendBar == "A") {
-        // 没有地区进行查询
-        if (cityAddrs == null) {
-            var query = {};
-            // 查询总记录数，并计算总页数
-            var total = await Cat.collection.countDocuments(query);
-            var pageCount = Math.ceil(total / pageSizes);
 
-            // 查询当前页的数据，并进行分页
-            var data = await Cat.collection.find(query).skip((pages - 1) * pageSize).limit(pageSize).toArray();
+        if (CatRecommendBar == "A") {
+            GetHomeRecommend({ ...req.body }).then(value => {
+                console.log(value);
+            })
+        }
+
+        if (CatRecommendBar == "B") {
+            let { result, total, pageCount } = await GetHomeRecommend({ ...req.body })
             return res.status(200).json({
                 code: 200,
                 message: "数据返回成功",
                 result: {
                     message: "数据返回成功",
-                    data: data,
+                    data: result,
                     total,
                     pageCount,
                 }
             })
         }
 
-    } else if (CatRecommendBar == "B") {
-
-        // 没有地区进行查询
-        if (cityAddrs == null) {
-            // 查询总记录数，并计算总页数
-            var total = await Cat.collection.countDocuments(query);
-            var pageCount = Math.ceil(total / pageSizes);
-
-            // 查询当前页的数据，并进行分页
-            var data = await Cat.collection.find(query).skip((pages - 1) * pageSize).limit(pageSize).toArray();
+        if (CatRecommendBar == "C") {
+            let { result, total, pageCount } = await GetHomeRecommend({ ...req.body })
+            await delay(0)
             return res.status(200).json({
                 code: 200,
                 message: "数据返回成功",
                 result: {
                     message: "数据返回成功",
-                    data: data,
-                    total,
-                    pageCount,
-                }
-            })
-        } else {
-
-            // 查询总记录数，并计算总页数
-            query = { "addrs.fullLocation": { $regex: ".*" + cityAddrs.changeResult.provinceName + ".*" } };// 查询条件
-            var total = await Cat.collection.countDocuments(query);
-            var pageCount = Math.ceil(total / pageSizes);
-
-            // 查询当前页的数据，并进行分页
-            var data = await Cat.collection.find(query).skip((pages - 1) * pageSize).limit(pageSize).toArray();
-
-            console.log(data);
-            return res.status(200).json({
-                code: 200,
-                message: "数据返回成功",
-                result: {
-                    message: "数据返回成功",
-                    data: data,
+                    data: result,
                     total,
                     pageCount,
                 }
@@ -125,60 +176,148 @@ router.post('/home/recommend', async (req, res) => {
         }
 
 
-    } else if (CatRecommendBar == "C") {
 
-        // 有地区
-        // 没有地区
-        query = {};
-        // 查询总记录数，并计算总页数
-
-        var total = await Cat.collection.countDocuments(query);
-        var pageCount = Math.ceil(total / pageSizes);
-
-        // 查询当前页的数据，并进行分页
-        var data = await Cat.collection.find(query).sort({ time: -1 }).skip((pages - 1) * pageSize).limit(pageSize).toArray();
-
-        return res.status(200).json({
-            code: 200,
-            message: "数据返回成功",
+        // 异常捕获
+    } catch (err) {
+        return res.status(400).json({
+            code: 400,
+            message: "获取数据失败",
             result: {
-                message: "数据返回成功",
-                data: data,
-                total,
-                pageCount,
+                message: "获取数据失败",
+                data: [],
             }
         })
-
     }
 
 
 
 
-
-
-
-
-
-
-
-    res.status(200).json({
-        code: 200,
-        message: "数据返回成功",
-        result: {
-            message: "数据返回成功",
-        },
-    })
-
 })
 
-
-
-
-
-
-
-
-
-
-
 module.exports = router;
+
+
+
+
+// if (CatRecommendBar == "A") {
+//     console.log("A");
+//     query = {}
+//     // 没有地区进行查询
+//     // 查询总记录数，并计算总页数
+//     var total = await Cat.collection.countDocuments(query);
+//     var pageCount = Math.ceil(total / pageSizes);
+
+//     // 查询当前页的数据，并进行分页
+//     var data = await Cat.collection.find(query).skip((pages - 1) * pageSize).limit(pageSize).toArray();
+//     await delay(1000)
+
+//     return res.status(200).json({
+//         code: 200,
+//         message: "数据返回成功",
+//         result: {
+//             message: "数据返回成功",
+//             data: data,
+//             total,
+//             pageCount,
+//         }
+//     })
+// } else if (CatRecommendBar == "B") {
+//     // 没有地区进行查询
+//     if (cityAddrs == null) {
+//         console.log("B 没有地区");
+//         // 查询总记录数，并计算总页数
+//         var total = await Cat.collection.countDocuments(query);
+//         var pageCount = Math.ceil(total / pageSizes);
+
+//         // 查询当前页的数据，并进行分页
+//         var data = await Cat.collection.find(query).sort({ updated_at: 1 }).skip((pages - 1) * pageSize).limit(pageSize).toArray();
+//         await delay(3000)
+
+//         return res.status(200).json({
+//             code: 200,
+//             message: "数据返回成功",
+//             result: {
+//                 message: "数据返回成功",
+//                 data: data,
+//                 total,
+//                 pageCount,
+//             }
+//         })
+//     } else {
+//         console.log("B 有地区");
+//         // 查询总记录数，并计算总页数
+//         if (cityAddrs?.changeResult?.provinceName != "全国" || cityAddrs == null) {
+//             query = { "addrs.fullLocation": { $regex: ".*" + cityAddrs?.changeResult?.provinceName + ".*" } };// 查询条件
+//         } else {
+//             query = {}
+//         }
+//         var total = await Cat.collection.countDocuments(query);
+//         var pageCount = Math.ceil(total / pageSizes);
+
+//         // 查询当前页的数据，并进行分页
+//         var data = await Cat.collection.find(query).skip((pages - 1) * pageSize).limit(pageSize).toArray();
+
+//         await delay(3000)
+//         console.log(data.length);
+
+//         return res.status(200).json({
+//             code: 200,
+//             message: "数据返回成功",
+//             result: {
+//                 message: "数据返回成功",
+//                 data: data,
+//                 total,
+//                 pageCount,
+//             }
+//         })
+//     }
+
+
+// } else if (CatRecommendBar == "C") {
+//     console.log("C");
+//     // 有地区
+//     // 没有地区
+//     // 查询总记录数，并计算总页数
+//     if (cityAddrs == null) {
+//         console.log("进入到 C 这里了最新没有地区");
+//         query = {}
+//         var total = await Cat.collection.countDocuments(query);
+//         var pageCount = Math.ceil(total / pageSizes);
+
+//         // 查询当前页的数据，并进行分页
+//         var data = await Cat.collection.find(query).sort({ updated_at: -1 }).skip((pages - 1) * pageSize).limit(pageSize).toArray();
+
+//         await delay(1000)
+//         return res.status(200).json({
+//             code: 200,
+//             message: "数据返回成功",
+//             result: {
+//                 message: "数据返回成功",
+//                 data: data,
+//                 total,
+//                 pageCount,
+//             }
+//         })
+
+//     } else {
+//         console.log("进入 C 到最新有地区的");
+//         query = { "addrs.fullLocation": { $regex: ".*" + cityAddrs?.changeResult?.fullLocation + ".*" } };// 查询条件
+//         var total = await Cat.collection.countDocuments(query);
+//         var pageCount = Math.ceil(total / pageSizes);
+
+//         // 查询当前页的数据，并进行分页
+//         var data = await Cat.collection.find(query).sort({ updated_at: -1 }).skip((pages - 1) * pageSize).limit(pageSize).toArray();
+//         await delay(1000)
+//         return res.status(200).json({
+//             code: 200,
+//             message: "数据返回成功",
+//             result: {
+//                 message: "数据返回成功",
+//                 data: data,
+//                 total,
+//                 pageCount,
+//             }
+//         })
+//     }
+
+// }
