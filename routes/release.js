@@ -111,7 +111,7 @@ router.post('/release/filte', async (req, res) => {
                 imageUrl: imgUrlList,// 图片数据存储的是图片地址
             })
             // 延迟函数
-            await delay(3000)
+            // await delay(3000)
 
 
             // 存储成功返回数据给前端

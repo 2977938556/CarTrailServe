@@ -37,6 +37,7 @@ const HomeRouter = require('./routes/home.js')// 首页
 const RegisterRouter = require('./routes/register.js') // 注册
 const LoginRoutert = require('./routes/login.js')// 登录
 const ReleaseRouter = require('./routes/release.js')// 上传模块
+const Detail = require('./routes/detail.js')// 详情模块
 
 // 允许跨域
 app.use(cors())
@@ -55,6 +56,7 @@ app.use('/api', HomeRouter)  // 首页
 app.use('/api', RegisterRouter)// 注册
 app.use('/api', LoginRoutert)// 登录
 app.use('/api', ReleaseRouter)// 上传
+app.use('/api', Detail)
 
 
 app.listen(3000, () => {

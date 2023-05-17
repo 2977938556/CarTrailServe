@@ -4,6 +4,7 @@ const router = express.Router();
 const User = require('../models/User')
 const { v1, v4 } = require('uuid');// 生成随机id
 const { PasswordEncryption } = require('../utils/encryption.js')
+const Collect = require('../models/Collect.js')
 
 
 
@@ -42,12 +43,17 @@ router.post('/user/register', async (req, res) => {
             } else {
                 // 注册
                 // 手机号和名称未被注册，创建用户
+                let user_id = v1()
                 await User.create({
                     username: username,
                     password: await PasswordEncryption(password),
                     mobile: mobile,
-                    user_id: v1()
+                    user_id: user_id,
                 });
+
+
+
+
 
                 res.status(201).json({
                     code: 201,
