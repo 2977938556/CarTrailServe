@@ -3,6 +3,8 @@ const router = express.Router();
 let User = require('../models/User.js')
 let Cat = require('../models/Cat.js')
 let Collect = require('../models/Collect.js')
+let History = require('../models/CatHistory.js')
+
 const { decryptPssword } = require('../utils/encryption.js')
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
 const mongoose = require('mongoose');
@@ -12,6 +14,14 @@ const { v1, v4 } = require('uuid')
 
 
 
+// 在获取帖子详情的时候就插入一个用户的浏览记录
+
+
+
+async function checkCollectionExists(collectionName, user_id) {
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    return collections.some(collect => collect.name === collectionName);
+}
 
 
 // 获取帖子详情的数据
@@ -19,29 +29,91 @@ router.get('/detail/cate', async (req, res) => {
     try {
         // 这里我先是查找到用户的帖子在从帖子中获取user的数据
         let DetailData = await Cat.findOne({ cat_id: req.query.id }).populate('user_id')
+
         if (DetailData != null) {
-            await delay(10)
-            return res.status(200).json({
-                code: 200,
-                message: "查询成功",
-                result: {
-                    message: "查询成功",
-                    data: DetailData
+            await delay(2000)
+            let schemFlage = await checkCollectionExists("historyschems");
+
+            // 这里是没有数据集合的情况下
+            if (!schemFlage) {
+                await History.create({
+                    user_id: req.user.username,
+                    histories: [
+                        {
+                            type: "SEARCH",
+                            cat_id: req.query.id
+                        }
+                    ],
+                });
+            }
+
+            // 这里是有这个集合
+            if (schemFlage) {
+                // 通过用户id进行查询
+                let CollectData = await History.findOne({ user_id: req.user.username, });
+
+                // 遍历内部的数据是否有该历史记录
+                let index = CollectData.histories.findIndex(item => item.cat_id == req.query.id)
+
+
+                // 这里是没有数据所以需要直接添加
+                if (index < 0) {
+                    CollectData.histories.push({
+                        type: 'SEARCH',
+                        cat_id: req.query.id,
+                    })
+
+                } else {
+                    // 这里是没有,没有就直接添加
+                    // 先删除 
+                    CollectData.histories.splice(index, 1)
+                    // 添加
+                    CollectData.histories.push({
+                        type: 'SEARCH',
+                        cat_id: req.query.id,
+                    })
                 }
-            })
+
+                await CollectData.save()
+
+                res.status(200).json({
+                    code: 200,
+                    message: "数据或成功",
+                    result: {
+                        message: "数据或成功",
+                        data: DetailData
+                    },
+                })
+
+
+
+            } else {
+                return res.status(400).json({
+                    code: 400,
+                    message: "数据获取失败",
+                    result: {
+                        message: "数据获取失败",
+                        data: null
+                    }
+                })
+            }
+
+
         } else {
             res.status(400).json({
                 code: 400,
                 message: "获取数据失败",
                 result: {
                     message: "获取数据失败",
-                    data: DetailDat
+                    data: null
                 },
             })
         }
 
 
+
     } catch (e) {
+        console.log(e);
         res.status(400).json({
             code: 400,
             message: "获取数据失败",
@@ -72,8 +144,8 @@ router.get('/detail/collect', async (req, res) => {
             user_id: req.query.user_id,
             bookmarks: [],
         })
-
     }
+
 
     // 这里是如果有集合那么就
     if (mark != null) {

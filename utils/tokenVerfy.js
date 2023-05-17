@@ -11,7 +11,7 @@ exports.authMiddleware = (req, res, next) => {
     if (whiteList.some(item => req.url.indexOf(item) != -1)) {
         return next()
     }
-
+    // 截取出用户的token
     const token = req.headers.authorization?.split(' ')[1];
 
     // 判断是否有token 
@@ -23,7 +23,6 @@ exports.authMiddleware = (req, res, next) => {
         req.user = result.decoded; // 将解码后的用户信息存储到请求对象中
         next();
     }).catch(e => {
-        console.log("失效了02");
         return res.status(401).json({ message: '登录已过期，请重新登录', result: { message: '登录已过期，请重新登录' } });
     })
 }
