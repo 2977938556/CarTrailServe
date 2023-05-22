@@ -7,7 +7,6 @@ const { AddToken, CheckToken } = require('../utils/token.js')
 
 
 router.post('/user/login', (req, res) => {
-    console.log(req.url);
     let { username, password } = req.body
     // 这里就需要查询用用户名称和手机号是否有这个账户
     // 如果没有查到那么就提示登录

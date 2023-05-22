@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+
+
+// 历史记录的模块
 const HistorySchem = new mongoose.Schema({
     user_id: String, // 用户ID
     histories: [
@@ -14,9 +17,25 @@ const HistorySchem = new mongoose.Schema({
     ]
 })
 
-
 const History = mongoose.model('HistorySchem', HistorySchem);
 
 
-module.exports = History;
+
+// 个人喜好数据
+const LikeSchem = new mongoose.Schema({
+    user_id: String,
+    like: { type: Array, default: [] }
+})
+const Like = mongoose.model('LikeSchem', LikeSchem)
+
+
+
+
+
+
+
+
+
+
+module.exports = { History, Like };
 

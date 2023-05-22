@@ -3,7 +3,8 @@ const router = express.Router();
 let User = require('../models/User.js')
 let Cat = require('../models/Cat.js')
 let Collect = require('../models/Collect.js')
-let History = require('../models/CatHistory.js')
+let { History, Like } = require('../models/CatHistory.js')
+let { Comment, Reply } = require('../models/Comment.js')
 
 const { decryptPssword } = require('../utils/encryption.js')
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
@@ -30,85 +31,130 @@ router.get('/detail/cate', async (req, res) => {
         // 这里我先是查找到用户的帖子在从帖子中获取user的数据
         let DetailData = await Cat.findOne({ cat_id: req.query.id }).populate('user_id')
 
-        if (DetailData != null) {
-            await delay(2000)
-            let schemFlage = await checkCollectionExists("historyschems");
-
-            // 这里是没有数据集合的情况下
-            if (!schemFlage) {
-                await History.create({
-                    user_id: req.user.username,
-                    histories: [
-                        {
-                            type: "SEARCH",
-                            cat_id: req.query.id
-                        }
-                    ],
-                });
-            }
-
-            // 这里是有这个集合
-            if (schemFlage) {
-                // 通过用户id进行查询
-                let CollectData = await History.findOne({ user_id: req.user.username, });
-
-                // 遍历内部的数据是否有该历史记录
-                let index = CollectData.histories.findIndex(item => item.cat_id == req.query.id)
-
-
-                // 这里是没有数据所以需要直接添加
-                if (index < 0) {
-                    CollectData.histories.push({
-                        type: 'SEARCH',
-                        cat_id: req.query.id,
-                    })
-
-                } else {
-                    // 这里是没有,没有就直接添加
-                    // 先删除 
-                    CollectData.histories.splice(index, 1)
-                    // 添加
-                    CollectData.histories.push({
-                        type: 'SEARCH',
-                        cat_id: req.query.id,
-                    })
-                }
-
-                await CollectData.save()
-
-                res.status(200).json({
-                    code: 200,
-                    message: "数据或成功",
-                    result: {
-                        message: "数据或成功",
-                        data: DetailData
-                    },
-                })
-
-
-
-            } else {
-                return res.status(400).json({
-                    code: 400,
-                    message: "数据获取失败",
-                    result: {
-                        message: "数据获取失败",
-                        data: null
-                    }
-                })
-            }
-
-
-        } else {
-            res.status(400).json({
+        // 这里是没有该帖子的数据需要阻断后面的数据返回
+        if (!DetailData) {
+            return res.status(400).json({
                 code: 400,
-                message: "获取数据失败",
+                message: "数据获取失败",
                 result: {
-                    message: "获取数据失败",
+                    message: "数据获取失败",
                     data: null
-                },
+                }
             })
         }
+        // 这里是查早 是否有HistorySchem数据表集合
+        if (await checkCollectionExists("historyschems") == false) {
+            // 那么就需要新建一个历史记录的数据表
+            // 基于当前的数据新建当前的数据集，基于当前的用户数据新建一个新的历史记录的数据集合
+            await History.create({
+                user_id: req.user.username,
+                histories: [
+                    {
+                        type: "SEARCH",
+                        cat_id: req.query.id
+                    }
+                ],
+            });
+        }
+
+        // 这里是可能有用户的数据所以需要通过用户的id进行查找是否有该用户的历史记录
+        let HistoryData = await History.findOne({ user_id: req.user.username });
+
+        // 这里是没有找到情况 新建一个新的用户任务集合并返回数据
+        if (HistoryData == null) {
+            await History.create({
+                user_id: req.user.username,
+                histories: [
+                    {
+                        type: "SEARCH",
+                        cat_id: req.query.id
+                    }
+                ],
+            })
+
+        }
+        // 因为前面插入数据后不会立马获取数据所以需重新获取数据
+        HistoryData = await History.findOne({ user_id: req.user.username });
+        // 这里是验证是否有历史记录模块的数据
+        HistoryData = await History.findOne({ user_id: req.user.username });
+        // 这里就是需要基于当前提交的cat_id进行查早
+        let index = HistoryData?.histories?.findIndex(item => item.cat_id == req.query.id)
+        // 这里是表示没有找到
+        if (index >= 0) {
+            // 这里是删除掉元素再次添加进入到数据库中
+            HistoryData.histories.splice(index, 1)
+            HistoryData.histories.push({
+                type: 'SEARCH',
+                cat_id: req.query.id,
+            })
+
+        } else if (index < 0) {
+            // 这里是没有找到数据所以直接添加数据
+            HistoryData.histories.push({
+                type: 'SEARCH',
+                cat_id: req.query.id,
+            })
+        }
+        // 持久化被修改的数据
+        await HistoryData.save()
+
+
+
+
+        // 喜欢的数据收集
+
+        // 这里是查早 喜欢的数据Link
+        if (await checkCollectionExists("likeschems") == false) {
+            // // 那么就需要新建一个Like的数据表
+            // // 基于当前的数据新建当前的数据集，基于当前的用户数据新建一个新的历史记录的数据集合
+            await Like.create({
+                user_id: req.user.username,
+                like: [...DetailData.lable]
+            });
+
+
+            // // 由于是第一次添加所以呢就不会继续向后面执行
+            return res.status(200).json({
+                code: 200,
+                message: "数据获取成功",
+                result: {
+                    message: "数据获取成功",
+                    data: DetailData
+                }
+            })
+        }
+
+        // 这里是可能有用户的数据所以需要通过用户的id进行查找是否有该用户的历史记录
+        let LikeData = await Like.findOne({ user_id: req.user.username });
+
+        // 这里表示可能没有当前用户的数据
+        if (!LikeData) {
+            let data = await Like.create({
+                user_id: req.user.username,
+                like: [...DetailData.lable]
+            })
+        }
+
+        // 这里是有数据但是我们可以将数据保存起来
+        LikeData = await Like.findOne({ user_id: req.user.username });
+        DetailData.lable.forEach((item, index) => {
+            if (item != LikeData.like[index]) {
+                LikeData.like.push(DetailData.lable[index])
+            }
+        })
+
+        await LikeData.save()
+
+
+        // 经过上面的验证所以呢就可以返回最终的数据
+        return res.status(200).json({
+            code: 200,
+            message: "数据获取成功",
+            result: {
+                message: "数据获取成功",
+                data: DetailData
+            }
+        })
 
 
 
@@ -121,10 +167,8 @@ router.get('/detail/cate', async (req, res) => {
                 message: "获取数据失败",
                 data: null
 
-            },
+            }
         })
-
-
     }
 
 });
@@ -134,9 +178,10 @@ router.get('/detail/cate', async (req, res) => {
 router.get('/detail/collect', async (req, res) => {
     let collect_id = v1()
     // 这里我们先查询是否有这个集合如果没有那么就创建，如果有那么就返回数据回去，
-    let collectionName = 'collectschems'
-    let mark = await mongoose.connection.db.listCollections({ name: collectionName }).next()
-    if (mark == null) {
+    let mark = await checkCollectionExists("collectschems")
+
+    // 这里是没有收藏的集合
+    if (mark == false) {
         // 创建集合
         // 创建一个空的集合
         await Collect.create({
@@ -146,32 +191,21 @@ router.get('/detail/collect', async (req, res) => {
         })
     }
 
-
-    // 这里是如果有集合那么就
-    if (mark != null) {
+    // 这里是表示有集合但是还是需要查询该用户是否有数据
+    if (mark) {
         // 不等于的情况下
-        let CollectData = await Collect.findOne({ user_id: req.query.user_id });
+        let CollectData = await Collect.findOne({ user_id: req.query.user_id })
 
-        // 这里是指如果没有查询到有收藏的数据那么就是需要被创建一个收藏集合
-        if (CollectData == null) {
-            console.log("进来这里了错误");
-            // 创建新的空白无数据集合
-            let newCollect = await Collect.create({
+        // 没有该用户查询的情况
+        if (!CollectData) {
+            await Collect.create({
                 collect_id: collect_id,
                 user_id: req.query.user_id,
                 bookmarks: [],
             })
-            return res.status(200).json({
-                code: 200,
-                message: "查询成功",
-                result: {
-                    message: "查询成功",
-                    data: newCollect
-                }
-            })
         }
 
-        // 返回成功的数据
+
         return res.status(200).json({
             code: 200,
             message: "查询成功",
@@ -182,6 +216,7 @@ router.get('/detail/collect', async (req, res) => {
         })
 
     }
+
 })
 
 
@@ -194,7 +229,6 @@ router.post('/detail/collect', async (req, res) => {
     let { DetailData, cat_id, userData, collectFlage } = req.body
 
 
-
     try {
 
         // 思路大概是这样的
@@ -205,7 +239,7 @@ router.post('/detail/collect', async (req, res) => {
             ceshi.bookmarks.push({
                 created_at: Date.now(),
                 user_id: DetailData.user_id.user_id,// 发布者的id
-                cat_id: cat_id,// 发布者的帖子id
+                cat_id: DetailData.cat_id,// 发布者的帖子id
                 title: DetailData.title// 发布者的帖子标题
             })
 
@@ -221,8 +255,6 @@ router.post('/detail/collect', async (req, res) => {
                 }
             })
         }
-
-
 
 
         // 需要被删除
@@ -254,85 +286,222 @@ router.post('/detail/collect', async (req, res) => {
         })
     }
 
-
-
-
-
-
-
-
-
-    // try {
-    //     // 未收藏
-    //     if (req.body.collectFlage == false) {
-    //         let ceshi = await Collect.findOne({ user_id: collectData.user_id })
-    //         ceshi.bookmarks.push({
-    //             created_at: Date.now(),
-    //             user_id: DetailData.user_id.user_id,
-    //             cat_id: DetailData.cat_id,
-    //             title: DetailData.title
-    //         })
-
-    //         // 持久化存储
-    //         await ceshi.save()
-    //         // 返回
-    //         return res.status(200).json({
-    //             code: 200,
-    //             message: "收藏成功",
-    //             result: {
-    //                 message: "查询成功",
-    //                 data: ceshi
-    //             }
-    //         })
-
-    //     } else if (req.body.collectFlage == true) {
-    //         console.log("取消收藏");
-    //         // 收藏的话就需要取消
-    //         let ceshi = await Collect.findOne({ user_id: collectData.user_id })
-
-
-    //         let index = ceshi.bookmarks.findIndex(item => {
-    //             // item.cat_id == DetailData.cat_id
-    //             console.log(item.cat_id == DetailData.cat_id);
-    //         })
-    //         // console.log(index);
-    //         // ceshi.bookmarks.splice(index, 1)
-
-
-
-
-    //         // bug就是这里，回教室做了
-    //         // 持久化存储
-    //         // await ceshi.save()
-    //         // 返回
-    //         return res.status(200).json({
-    //             code: 200,
-    //             message: "收藏成功",
-    //             result: {
-    //                 message: "查询成功",
-    //                 data: []
-    //             }
-    //         })
-
-
-
-
-    //     }
-
-
-
-    // } catch (err) {
-    //     return res.status(400).json({
-    //         code: 400,
-    //         message: "失败",
-    //         result: {
-    //             message: "查询成功",
-    //             data: []
-    //         }
-    //     })
-
-    // }
 })
+
+
+// 推荐的数据集合
+router.get('/detail/recommend', async (req, res) => {
+
+    try {
+        // 获取当前用户的喜欢
+        let like = await Like.findOne({ user_id: req.user.username })
+
+
+        const queryStr = like.like
+
+        function randomEvenNumber(start, end) {
+            const range = (end - start) / 2;
+            const randomRange = Math.floor(Math.random() * (range + 1));
+            const randomEvenNumber = start + randomRange * 2;
+            // if ()
+            return randomEvenNumber;
+        }
+
+        const number = randomEvenNumber(8, 18);
+
+
+
+        let RemmendData = await Cat.find({ lable: { $in: queryStr } }).limit(number);
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: RemmendData,
+            }
+        })
+
+    } catch (e) {
+        return res.status(400).json({
+            code: 400,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: RemmendData,
+            }
+        })
+
+    }
+})
+
+
+
+// 存储评论的模块
+router.post('/detail/comment', async (req, res) => {
+    try {
+        let { content, commenter, CatId } = req.body
+
+        // 这里是添加评论的数据
+        let commentData = new Comment({
+            CatId: CatId,
+            content: content,
+            commenter: commenter,
+            replyCount: 0,
+        })
+        // 这里是储存用户数据模块
+        let result = await commentData.save()
+
+
+        //  这里我们查询到用户的数据并添加进入到需要返回的数据中
+        let data = await User.findById(result.commenter)
+        result.commenter = data
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: result
+
+            }
+        })
+    } catch (e) {
+        return res.status(400).json({
+            code: 400,
+            message: "发布评论失败",
+            result: {
+                message: "发布评论失败",
+                data: [],
+            }
+        })
+    }
+
+
+})
+
+
+
+// 获取评论数据
+router.get('/detail/comment', async (req, res) => {
+
+    let cat_id = req.query.cat_id
+    let result = await Comment.find({ CatId: cat_id }).populate([
+        { path: "commenter" },
+        {
+            // 这里是bug明天在修复
+            path: "replies",
+            populate: {
+                path: "replier",
+                model: "User",
+            },
+        },
+    ])
+
+
+    return res.status(200).json({
+        code: 200,
+        message: "数据返回成功",
+        result: {
+            message: "数据返回成功",
+            data: result,
+        }
+    })
+})
+
+
+// 点赞请求
+router.post('/detail/addup', async (req, res) => {
+    try {
+        // 一个是评论id一个是用户id
+        let { addupId, commenter } = req.body
+        // 基于评论的id进行查找到评论的数据数据
+        // 然后在里面点赞的模块中看看是否有已经点赞的
+        let result = await Comment.findById({ _id: addupId })
+
+        // 查找并遍历所有的数据
+        if (result != null) {
+            const userIds = result.addup.map(user => String(user._id)); // 将 ObjectId 转换为字符串
+
+            let index = userIds.findIndex(item => item == commenter)
+            // 小于0表示就是数据表示没有数据，
+            if (index < 0) {
+                // 所以就是需要添加进去的
+                result.addup.push(commenter)
+            } else {
+                // 删除原有掉元素
+                result.addup.splice(index, 1)
+            }
+
+            await result.save()
+        }
+
+
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: result,
+            }
+        })
+    } catch (err) {
+        return res.status(400).json({
+            code: 400,
+            message: "点赞失败",
+            result: {
+                message: "点赞失败",
+                data: result,
+            }
+        })
+    }
+
+
+
+
+
+
+})
+
+
+// 储存用户的评论信息
+router.post('/detail/reply', async (req, res) => {
+    // 分别是回复的内容 回复的评论id  回复的用户id
+    let { CommenTvalue, replyVal, commenter } = req.body
+
+
+    let Replay = new Reply({
+        content: CommenTvalue,
+        replier: commenter,
+        parentId: replyVal
+    })
+    // 持久化存储用户的回复
+    let ss = await Replay.save()
+
+    // 通过评论id查找到评论的id
+    let sss = await Comment.findById(replyVal)
+    // 将回复的id添加到查询出来的数据里面
+    sss.replies.push(ss._id)
+
+
+
+    // 完成到这里了
+    let opo = await sss.save()
+    console.log(opo);
+
+
+    return res.status(200).json({
+        code: 200,
+        message: "数据返回成功",
+        result: {
+            message: "数据返回成功",
+            data: [],
+        }
+    })
+})
+
+
 
 
 module.exports = router
