@@ -14,22 +14,22 @@ const { v1, v4 } = require('uuid')
 
 
 
-
-// 在获取帖子详情的时候就插入一个用户的浏览记录
-
-
-
+// 这个是用于判断是否有当前的数据表的情况下
 async function checkCollectionExists(collectionName, user_id) {
     const collections = await mongoose.connection.db.listCollections().toArray();
     return collections.some(collect => collect.name === collectionName);
 }
-
 
 // 获取帖子详情的数据
 router.get('/detail/cate', async (req, res) => {
     try {
         // 这里我先是查找到用户的帖子在从帖子中获取user的数据
         let DetailData = await Cat.findOne({ cat_id: req.query.id }).populate('user_id')
+
+
+        // 这里还需要查找一条评价信息
+        let commentData = await Comment.find({ CatId: DetailData._id }) || ""
+
 
         // 这里是没有该帖子的数据需要阻断后面的数据返回
         if (!DetailData) {
@@ -152,7 +152,7 @@ router.get('/detail/cate', async (req, res) => {
             message: "数据获取成功",
             result: {
                 message: "数据获取成功",
-                data: DetailData
+                data: { DetailData, commentData }
             }
         })
 
@@ -172,7 +172,6 @@ router.get('/detail/cate', async (req, res) => {
     }
 
 });
-
 
 // 获取用户用户收藏的数据
 router.get('/detail/collect', async (req, res) => {
@@ -288,7 +287,6 @@ router.post('/detail/collect', async (req, res) => {
 
 })
 
-
 // 推荐的数据集合
 router.get('/detail/recommend', async (req, res) => {
 
@@ -334,7 +332,6 @@ router.get('/detail/recommend', async (req, res) => {
 
     }
 })
-
 
 
 // 存储评论的模块
@@ -419,6 +416,7 @@ router.post('/detail/addup', async (req, res) => {
         // 然后在里面点赞的模块中看看是否有已经点赞的
         let result = await Comment.findById({ _id: addupId })
 
+
         // 查找并遍历所有的数据
         if (result != null) {
             const userIds = result.addup.map(user => String(user._id)); // 将 ObjectId 转换为字符串
@@ -465,7 +463,7 @@ router.post('/detail/addup', async (req, res) => {
 })
 
 
-// 储存用户的评论信息
+// 储存用户的回复的信息
 router.post('/detail/reply', async (req, res) => {
     // 分别是回复的内容 回复的评论id  回复的用户id
     let { CommenTvalue, replyVal, commenter } = req.body
@@ -481,25 +479,93 @@ router.post('/detail/reply', async (req, res) => {
 
     // 通过评论id查找到评论的id
     let sss = await Comment.findById(replyVal)
+
+
     // 将回复的id添加到查询出来的数据里面
     sss.replies.push(ss._id)
 
+    // 到这里是将回复的id保存到评论id中
+    await sss.save()
 
 
-    // 完成到这里了
-    let opo = await sss.save()
-    console.log(opo);
 
+    // 这里查询出被添加到的回复信息和用户信息
+    let replayDat = await Reply.findById(ss._id).populate("replier")
 
     return res.status(200).json({
         code: 200,
         message: "数据返回成功",
         result: {
             message: "数据返回成功",
-            data: [],
+            data: replayDat,
         }
     })
 })
+
+
+
+
+// 通过评价的id获取用户的评价详情
+router.get('/detail/commentdetail', async (req, res) => {
+
+    try {
+        // console.log();
+        let id = req.query.id
+
+        // 查询出当前的数据、
+        let commitData = await Comment.findById(id).populate([
+            { path: "commenter" },
+            {
+                path: "replies",
+                populate: {
+                    path: "replier",
+                    model: "User",
+                }
+            }
+        ])
+
+        if (!commitData) {
+            return res.status(400).json({
+                code: 400,
+                message: "数据返回失败请重试",
+                result: {
+                    message: "数据返回失败请重试",
+                    data: null,
+                }
+            })
+        }
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: commitData,
+            }
+        })
+
+
+
+
+
+    } catch (err) {
+        return res.status(400).json({
+            code: 400,
+            message: "数据返回失败请重试",
+            result: {
+                message: "数据返回失败请重试",
+                data: null,
+            }
+        })
+    }
+
+
+
+
+})
+
+
+
 
 
 
