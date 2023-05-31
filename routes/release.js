@@ -3,10 +3,10 @@ const path = require('path')
 const router = express.Router();
 const { v1, v4 } = require('uuid')
 const fs = require('fs');
-const os = require('os');
 const Cat = require('../models/Cat.js')// 数据表
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
-
+// import{} 
+const { GetIp } = require('../utils/https.js')
 
 
 // 延迟函数
@@ -14,30 +14,6 @@ const { delay } = require('../utils/UniversalFn.js')// 通用函数
 
 
 
-// 获取当前服务器的ip地址，端口是固定的3000
-function GetIp() {
-    return new Promise((resolve, reject) => {
-        const interfaces = os.networkInterfaces();
-        let address = null;
-        for (const name of Object.keys(interfaces)) {
-            for (const iface of interfaces[name]) {
-                if (iface.family !== 'IPv4' || iface.internal !== false) {
-                    // 跳过它不是IPv4或内部接口的地址
-                    continue;
-                }
-                // 找到匹配的 IP 地址
-                address = iface.address;
-                break;
-            }
-            if (address) {
-                resolve(address)
-                break;
-            } else {
-                reject(new Error("服务器错误请重试"))
-            }
-        }
-    })
-}
 
 // 定义一个 保存的位置
 let savePath = path.join(__dirname, `../upload/cart/`);

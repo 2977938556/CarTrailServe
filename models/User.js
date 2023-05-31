@@ -12,7 +12,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin', 'ban'],
         default: 'user'
-    }
+    },
+    configuration_information: {
+        History: {
+            type: Boolean,
+            enum: [true, false,],
+            default: true,
+        },// 是否开启历史记录
+        private_letter: {
+            type: Boolean,
+            enum: [true, false,],
+            default: true,
+        },// 是否开启私信
+    },
 })
 
 

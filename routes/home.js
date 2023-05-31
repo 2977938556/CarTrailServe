@@ -65,11 +65,12 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
     return new Promise(async (reolve, reject) => {
         let query = {}
         if (cityAddrs?.changeResult?.provinceCode == 1 || cityAddrs == null || JSON.stringify(cityAddrs) == "{}") {
-            query = {}
+            query = { to_examine: 'pass' }
         }
 
         if (cityAddrs != null && JSON.stringify(cityAddrs) != "{}" && cityAddrs?.changeResult?.provinceCode != 1) {
-            query = { "addrs.fullLocation": { $regex: ".*" + cityAddrs?.changeResult?.provinceName + ".*" } };// 查询条件
+            // 这里将地区的数据设置未正则表达式，并且还设置了需要审核通过的才能被加载出来
+            query = { "addrs.fullLocation": { $regex: ".*" + cityAddrs?.changeResult?.provinceName + ".*" }, to_examine: 'pass' };// 查询条件
         }
 
         // 设置是最新还是推荐
@@ -103,7 +104,6 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
         }
 
         if (CatRecommendBar == "C") {
-            console.log("C模块");
             try {
                 // 查询当前页的数据，并进行分页
                 let data = await Cat.collection.find(query).sort({ updated_at: stores }).skip((page - 1) * pageSize).limit(pageSize).toArray();
@@ -130,14 +130,14 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
 
 // 获取推荐模块
 router.post('/home/recommend', async (req, res) => {
-    let { page, pageSize, cityAddrs, CatRecommendBar, userData } = req.body;
+    let { CatRecommendBar } = req.body;
 
     try {
 
 
         if (CatRecommendBar == "A") {
             GetHomeRecommend({ ...req.body }).then(value => {
-                console.log(value);
+                console.log("测试", value);
             })
         }
 

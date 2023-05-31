@@ -5,6 +5,7 @@ let Cat = require('../models/Cat.js')
 let Collect = require('../models/Collect.js')
 let { History, Like } = require('../models/CatHistory.js')
 let { Comment, Reply } = require('../models/Comment.js')
+let { Follow } = require('../models/FollowUser.js')
 
 const { decryptPssword } = require('../utils/encryption.js')
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
@@ -15,20 +16,30 @@ const { v1, v4 } = require('uuid')
 
 
 // 这个是用于判断是否有当前的数据表的情况下
-async function checkCollectionExists(collectionName, user_id) {
+async function checkCollectionExists(collectionName) {
     const collections = await mongoose.connection.db.listCollections().toArray();
     return collections.some(collect => collect.name === collectionName);
 }
 
 // 获取帖子详情的数据
 router.get('/detail/cate', async (req, res) => {
+
+
     try {
-        // 这里我先是查找到用户的帖子在从帖子中获取user的数据
+        // 这里是查找到帖子的数据再把用户的数据也给查询出来
         let DetailData = await Cat.findOne({ cat_id: req.query.id }).populate('user_id')
 
 
         // 这里还需要查找一条评价信息
         let commentData = await Comment.find({ CatId: DetailData._id }) || ""
+
+        // 这里我们需要设置一个点击量
+        const post = await Cat.findOne({ cat_id: req.query.id });
+        // 更新点击量
+        post.clickCount += 1;
+        // 保存数据
+        await post.save();
+
 
 
         // 这里是没有该帖子的数据需要阻断后面的数据返回
@@ -42,7 +53,83 @@ router.get('/detail/cate', async (req, res) => {
                 }
             })
         }
-        // 这里是查早 是否有HistorySchem数据表集合
+
+
+
+
+        // 这里我们需要获取当前登录的用户id
+        let fowllow = await User.findOne({ user_id: req.user.username })
+
+
+        // 这里就是查找是否有用户的关注列表如果没有那么就创建
+        let FollowUser = await Follow.findOne({ user_id: fowllow._id })
+
+        if (!FollowUser) {
+            await Follow.create({
+                user_id: fowllow._id,
+                follow: [],
+            });
+        }
+
+
+
+
+
+        // 这里需要进行判断用户是否开启了历史记录开关
+        let userid = req.user.username
+
+        let historyFlage = await User.findOne({ user_id: userid })
+
+        // 如果未true那么就需要记录用户的历史记录
+        if (historyFlage?.configuration_information?.History == true) {
+            // 这里是可能有用户的数据所以需要通过用户的id进行查找是否有该用户的历史记录
+            let HistoryData = await History.findOne({ user_id: req.user.username });
+
+            // 这里是没有找到情况 新建一个新的用户任务集合并返回数据
+            if (HistoryData == null) {
+                await History.create({
+                    user_id: req.user.username,
+                    histories: [
+                        {
+                            type: "SEARCH",
+                            cat_id: DetailData._id
+                        }
+                    ],
+                })
+            }
+
+
+
+            // 因为前面插入数据后不会立马获取数据所以需重新获取数据
+            HistoryData = await History.findOne({ user_id: req.user.username });
+            // 这里是验证是否有历史记录模块的数据
+            HistoryData = await History.findOne({ user_id: req.user.username });
+            // 这里就是需要基于当前提交的cat_id进行查早
+            let index = HistoryData?.histories?.findIndex(item => item.cat_id == DetailData._id)
+
+            // 这里是表示没有找到
+            if (index >= 0) {
+                // 这里是删除掉元素再次添加进入到数据库中
+                HistoryData.histories.splice(index, 1)
+                HistoryData.histories.push({
+                    type: 'SEARCH',
+                    cat_id: DetailData._id
+                })
+
+            } else if (index < 0) {
+                // 这里是没有找到数据所以直接添加数据
+                HistoryData.histories.push({
+                    type: 'SEARCH',
+                    cat_id: DetailData._id
+                })
+            }
+            // 持久化被修改的数据
+            await HistoryData.save()
+        }
+
+
+
+        // 这里是查找 是否有HistorySchem数据表集合
         if (await checkCollectionExists("historyschems") == false) {
             // 那么就需要新建一个历史记录的数据表
             // 基于当前的数据新建当前的数据集，基于当前的用户数据新建一个新的历史记录的数据集合
@@ -56,47 +143,6 @@ router.get('/detail/cate', async (req, res) => {
                 ],
             });
         }
-
-        // 这里是可能有用户的数据所以需要通过用户的id进行查找是否有该用户的历史记录
-        let HistoryData = await History.findOne({ user_id: req.user.username });
-
-        // 这里是没有找到情况 新建一个新的用户任务集合并返回数据
-        if (HistoryData == null) {
-            await History.create({
-                user_id: req.user.username,
-                histories: [
-                    {
-                        type: "SEARCH",
-                        cat_id: req.query.id
-                    }
-                ],
-            })
-
-        }
-        // 因为前面插入数据后不会立马获取数据所以需重新获取数据
-        HistoryData = await History.findOne({ user_id: req.user.username });
-        // 这里是验证是否有历史记录模块的数据
-        HistoryData = await History.findOne({ user_id: req.user.username });
-        // 这里就是需要基于当前提交的cat_id进行查早
-        let index = HistoryData?.histories?.findIndex(item => item.cat_id == req.query.id)
-        // 这里是表示没有找到
-        if (index >= 0) {
-            // 这里是删除掉元素再次添加进入到数据库中
-            HistoryData.histories.splice(index, 1)
-            HistoryData.histories.push({
-                type: 'SEARCH',
-                cat_id: req.query.id,
-            })
-
-        } else if (index < 0) {
-            // 这里是没有找到数据所以直接添加数据
-            HistoryData.histories.push({
-                type: 'SEARCH',
-                cat_id: req.query.id,
-            })
-        }
-        // 持久化被修改的数据
-        await HistoryData.save()
 
 
 
@@ -112,14 +158,13 @@ router.get('/detail/cate', async (req, res) => {
                 like: [...DetailData.lable]
             });
 
-
             // // 由于是第一次添加所以呢就不会继续向后面执行
             return res.status(200).json({
                 code: 200,
                 message: "数据获取成功",
                 result: {
                     message: "数据获取成功",
-                    data: DetailData
+                    data: { DetailData, commentData }
                 }
             })
         }
@@ -290,43 +335,58 @@ router.post('/detail/collect', async (req, res) => {
 // 推荐的数据集合
 router.get('/detail/recommend', async (req, res) => {
 
+
+    // 这个是随机产生两个随机数的模块
+    function randomEvenNumber(start, end) {
+        const range = (end - start) / 2;
+        const randomRange = Math.floor(Math.random() * (range + 1));
+        const randomEvenNumber = start + randomRange * 2;
+        // if ()
+        return randomEvenNumber;
+    }
+
+    const number = randomEvenNumber(8, 18);
+
     try {
         // 获取当前用户的喜欢
-        let like = await Like.findOne({ user_id: req.user.username })
+        let like = await Like.findOne({ user_id: req.user.username }) || ""
 
+        // 这里我们做了一个判断就是用户没有like的时候那么就需要设置一个为空作为判断对象 来设置是否有条件
+        // 这里还可以设置是否需要基于地区来返回数据
+        if (like != "") {
+            const queryStr = like.like
 
-        const queryStr = like.like
+            let RemmendData = await Cat.find({ lable: { $in: queryStr } }).limit(number);
 
-        function randomEvenNumber(start, end) {
-            const range = (end - start) / 2;
-            const randomRange = Math.floor(Math.random() * (range + 1));
-            const randomEvenNumber = start + randomRange * 2;
-            // if ()
-            return randomEvenNumber;
-        }
-
-        const number = randomEvenNumber(8, 18);
-
-
-
-        let RemmendData = await Cat.find({ lable: { $in: queryStr } }).limit(number);
-
-        return res.status(200).json({
-            code: 200,
-            message: "数据返回成功",
-            result: {
+            return res.status(200).json({
+                code: 200,
                 message: "数据返回成功",
-                data: RemmendData,
-            }
-        })
+                result: {
+                    message: "数据返回成功",
+                    data: RemmendData,
+                }
+            })
+        } else {
+
+            let RemmendData = await Cat.find().limit(number);
+
+            return res.status(200).json({
+                code: 200,
+                message: "数据返回成功",
+                result: {
+                    message: "数据返回成功",
+                    data: RemmendData,
+                }
+            })
+        }
 
     } catch (e) {
         return res.status(400).json({
             code: 400,
-            message: "数据返回成功",
+            message: "数据返回失败",
             result: {
-                message: "数据返回成功",
-                data: RemmendData,
+                message: "数据返回失败",
+                data: [],
             }
         })
 
@@ -566,7 +626,113 @@ router.get('/detail/commentdetail', async (req, res) => {
 
 
 
+// // 获取用户的关注数据
+router.get('/detail/follows', async (req, res) => {
+    // 当前登录的用户
+    let fowllow = await User.findOne({ user_id: req.user.username })
 
+    try {
+        // 这里是通过id进行查询用户的数据
+        let followList = await Follow.findOne({ user_id: fowllow._id })
+        return res.status(200).json({
+            code: 200,
+            message: "返回数据成功",
+            result: {
+                message: "返回数据成功",
+                data: followList || [],
+            }
+        })
+
+
+    } catch (e) {
+        console.log(e);
+        return res.status(400).json({
+            code: 400,
+            message: "返回数据失败",
+            result: {
+                message: "返回数据失败",
+                data: [],
+            }
+        })
+    }
+})
+
+
+// 设置关注的数据
+router.post('/detail/follows', async (req, res) => {
+
+    try {
+        let { user_id, follow_id } = req.body
+        // 需要提供当前登录的用户id和当前需要关注的用户id
+        // 这里是判断用户是否是关注自己的情况
+        if (user_id == follow_id) {
+            return res.status(200).json({
+                code: 200,
+                message: "不能关注自己",
+                result: {
+                    message: "不能关注自己",
+                    data: null,
+                }
+            })
+        }
+
+
+
+
+        // // 先查询是否有当前用户
+        let followUser = await Follow.findOne({ user_id: user_id })
+
+        let index = followUser.follow.findIndex(item => item?.follow_id == follow_id)
+        let followUserCopy = []
+
+        // // 小于0表示就是需要进行 关注
+        if (index < 0) {
+            followUser.follow.push({ follow_id: follow_id })
+            followUserCopy = await followUser.save()
+            // // 返回状态
+            return res.status(200).json({
+                code: 200,
+                message: "关注成功",
+                result: {
+                    message: "关注成功",
+                    data: followUserCopy,
+                }
+            })
+
+        } else {
+            followUser.follow.splice(index, 1)
+            followUserCopy = await followUser.save()
+            // // 返回状态
+            return res.status(200).json({
+                code: 200,
+                message: "取消关注成功",
+                result: {
+                    message: "取消关注成功",
+                    data: followUserCopy,
+                }
+            })
+        }
+
+
+
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            code: 400,
+            message: "关注失败",
+            result: {
+                message: "关注失败",
+                data: [],
+            }
+        })
+    }
+
+
+
+
+
+})
 
 
 
