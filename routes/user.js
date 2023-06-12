@@ -53,10 +53,32 @@ router.post('/user/modifyusers', async (req, res) => {
         const userDat = await User.findOne({ user_id: req.user.username })
 
 
+
         // 这里我们需要判断是否有相同名称的用户
         const user_flage = await User.findOne({ username: username })
+
+
+
+        // 这里是是需要进行判断是否有相同名称的
+
+        // 这里是查询到自己了
         // 这里是判断是否有相同名称的用户
-        if (user_flage != null && user_flage.user_id != req.user.username) {
+        // if (user_flage != null && user_flage.user_id != req.user.username) {
+        //     return res.status(400).json({
+        //         code: 400,
+        //         message: "用户名称被使用",
+        //         result: {
+        //             message: "用户名称被使用",
+        //             data: null
+        //         }
+        //     })
+        // }
+
+
+
+
+        // 这里就是说如果用户找到了那么就是找到了其他的用户有当前名称所以不能修改
+        if (user_flage != null && user_flage?.user_id != req.user.username) {
             return res.status(400).json({
                 code: 400,
                 message: "用户名称被使用",
@@ -68,8 +90,18 @@ router.post('/user/modifyusers', async (req, res) => {
         }
 
 
-        userDat.username = username || userDat.username
-        userDat.slogin = slogin || userDat.slogin
+
+
+        if (user_flage == null) {
+            userDat.username = username || userDat.username
+            userDat.slogin = slogin || userDat.slogin
+            await userDat.save()
+        }
+
+
+
+
+
 
 
 
@@ -90,10 +122,6 @@ router.post('/user/modifyusers', async (req, res) => {
 
             userDat.bgimgUrl = imgUrl
 
-            await userDat.save()
-
-
-
         }
 
 
@@ -109,7 +137,6 @@ router.post('/user/modifyusers', async (req, res) => {
 
 
     } catch (err) {
-        console.log(err);
         return res.status(400).json({
             code: 400,
             message: "修改失败",

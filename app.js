@@ -15,6 +15,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/CatTrail', {
 }).then(() => {
     console.log('数据库链接成功')
 }).catch((err) => {
+    console.log(err);
     console.log("数据库链接失败 error")
 })
 
@@ -33,14 +34,25 @@ app.use('/public/uploads/cart', express.static(path.join(__dirname, '/public/upl
 app.use('/public/uploads/userimg', express.static(path.join(__dirname, '/public/uploads/userimg')))
 
 
-// 导入路由
+//前端路由 导入路由
 const HomeRouter = require('./routes/home.js')// 首页
 const RegisterRouter = require('./routes/register.js') // 注册
 const LoginRoutert = require('./routes/login.js')// 登录
 const ReleaseRouter = require('./routes/release.js')// 上传模块
 const Detail = require('./routes/detail.js')// 详情模块
 // const Upload = require('./routes/upload.js')// 上传模块
-const UserRouter = require('./routes/user.js')
+const UserRouter = require('./routes/user.js')// 用户中心模块
+
+
+
+//后端路由
+const BgLogin = require('./routes/background/login.js')// 后端登录
+const { sh_llmgl, sh_user } = require('./routes/background/sh.js')// 后端流浪猫审核
+
+
+
+
+
 
 // 允许跨域
 app.use(cors())
@@ -61,6 +73,15 @@ app.use('/api', ReleaseRouter)// 上传
 app.use('/api', Detail)// 帖子详情
 // app.use('/api', Upload)// 上传个人头像模块
 app.use('/api', UserRouter)
+
+
+
+
+// 后端配置的路由
+app.use('/api', BgLogin)// 后端登录
+// app.use('/api', ShLlmGl)// 审核流浪猫管理
+app.use('/api', sh_llmgl)
+app.use('/api', sh_user)
 
 
 app.listen(3000, () => {

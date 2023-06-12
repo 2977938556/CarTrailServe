@@ -204,7 +204,6 @@ router.get('/detail/cate', async (req, res) => {
 
 
     } catch (e) {
-        console.log(e);
         res.status(400).json({
             code: 400,
             message: "获取数据失败",
@@ -645,7 +644,6 @@ router.get('/detail/follows', async (req, res) => {
 
 
     } catch (e) {
-        console.log(e);
         return res.status(400).json({
             code: 400,
             message: "返回数据失败",
@@ -717,7 +715,6 @@ router.post('/detail/follows', async (req, res) => {
 
 
     } catch (err) {
-        console.log(err);
         return res.status(400).json({
             code: 400,
             message: "关注失败",

@@ -11,7 +11,7 @@ const CatSchema = new mongoose.Schema({
     to_examine: {
         type: String,
         enum: ['examine', 'pass', 'nopass'],
-        default: 'pass'
+        default: 'examine'
     },// 审核判断 【审核中，通过，未通过】
     Successful_adoption: {
         type: Boolean, default: false

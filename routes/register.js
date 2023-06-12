@@ -30,7 +30,7 @@ router.post('/user/register', async (req, res) => {
         } else {
             // 没有查询到用户数据
             // 手机号未注册，查询名称是否被使用
-            let usernameb = await User.findOne({ username: username })
+            let usernameb = await User.findOne({ username: new RegExp(username, 'i') })
             // 有相同的名称
             if (usernameb) {
                 res.status(400).json({
@@ -53,8 +53,6 @@ router.post('/user/register', async (req, res) => {
 
 
 
-
-
                 res.status(201).json({
                     code: 201,
                     message: "注册成功",
@@ -69,7 +67,6 @@ router.post('/user/register', async (req, res) => {
 
         }
     } catch (err) {
-        console.log(err);
         // 所有服务器错误或者数据库错误就会进入到这里
         res.status(500).json({
             code: 500,
