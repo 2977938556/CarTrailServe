@@ -102,9 +102,6 @@ router.post('/user/modifyusers', async (req, res) => {
 
 
 
-
-
-
         // 这是判断是否是需要修改图片
         // 假设用户上传了一张新的头像那么用户
         if (imgBase64 != null) {
@@ -120,7 +117,13 @@ router.post('/user/modifyusers', async (req, res) => {
                 }
             }
 
+
+            console.log(imgUrl);
+
             userDat.bgimgUrl = imgUrl
+
+
+            await userDat.save()
 
         }
 

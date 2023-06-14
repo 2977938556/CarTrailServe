@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { MongoClient, ObjectId } = require('mongodb');
 // 导入Cat帖子模块
 const Cat = require('../../../models/Cat.js')
 const { v1, v4 } = require('uuid');// 生成随机id
@@ -9,36 +10,34 @@ const { delay } = require('../../../utils/UniversalFn.js');// 通用函数
 
 
 
-// page pagesize type =["whole","examine","pass","nopass"]
-
-
 // 这个是提供帖子数据的
 router.post('/bg/catdata', async (req, res) => {
     // 这三个值分别是 当前第几页 每一页的数据 返回的数据类型
-    let { page = 1, pageSize = 10, type = "whole", searchVal = "" } = req.body
+    let { page = 1, pageSize = 10, type, searchVal = "" } = req.body
+
+    console.log("测试01", type);
     // 查询条件
     let query = {}
 
-
-
     const regExp = new RegExp(searchVal, 'i'); // 不区分大小写匹配
+
     // 这里判断是全部的数据的话就没有查询条件了
     if (type == "whole") {
-        if (searchVal != "") {
-            query.title = regExp
-        }
+        query = {}
     } else {
-        if (searchVal != "") {
-            query.title = regExp
-        }
         // 这里就是返回数据回去
         query.to_examine = type
     }
 
+    // 这里是搜索的条件
+    if (searchVal != "") {
+        query.title = regExp
+        query.content = regExp
+    }
+
+
 
     console.log(query);
-
-
 
     // 总条数
     var total = await Cat.collection.countDocuments(query);
@@ -67,14 +66,9 @@ router.post('/bg/catdata', async (req, res) => {
 })
 
 
-
-
-
 // 修改帖子数据的
 router.post('/bg/catpass', async (req, res) => {
     let { _id, type } = req.body
-
-
     // 这里是审核通过的情况，还需要发送一个信息给用户说已经审核完成 未完成也是一样的
     let data = await Cat.findById(_id)
     if (data) {
@@ -84,9 +78,7 @@ router.post('/bg/catpass', async (req, res) => {
         // 重新存储数据到数据库中
         await data.save()
 
-
         // 这里需要广播一个消息给用户的通知列表中
-
 
         // 返回数据
         return res.status(200).json({
@@ -110,5 +102,38 @@ router.post('/bg/catpass', async (req, res) => {
 
 
 })
+
+
+
+// 这里是需要通过id查询出当前的帖子数据
+router.get('/bg/catiddata', async (req, res) => {
+    // 获取当前的帖子的id
+    let { id } = req.query;
+
+    Cat.findById(id).populate('user_id').then(async (value) => {
+        // await delay(10)
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: value,
+            }
+        })
+    }).catch(err => {
+        return res.status(200).json({
+            code: 404,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: null,
+            }
+        })
+    })
+
+
+})
+
+
 
 module.exports = router
