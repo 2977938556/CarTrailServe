@@ -32,6 +32,7 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: false }))
 //开放静态资源文件
 app.use('/public/uploads/cart', express.static(path.join(__dirname, '/public/uploads/cart')))
 app.use('/public/uploads/userimg', express.static(path.join(__dirname, '/public/uploads/userimg')))
+app.use('/public/uploads/storybook', express.static(path.join(__dirname, '/public/uploads/storybook')))
 
 
 //前端路由 导入路由
@@ -40,8 +41,12 @@ const RegisterRouter = require('./routes/register.js') // 注册
 const LoginRoutert = require('./routes/login.js')// 登录
 const ReleaseRouter = require('./routes/release.js')// 上传模块
 const Detail = require('./routes/detail.js')// 详情模块
-// const Upload = require('./routes/upload.js')// 上传模块
 const UserRouter = require('./routes/user.js')// 用户中心模块
+const StoryRouter = require('./routes/story.js')// 猫迹故事模块
+
+
+
+
 
 
 
@@ -51,14 +56,12 @@ const { sh_llmgl, sh_user } = require('./routes/background/sh.js')// 后端流�
 
 
 
-
-
-
 // 允许跨域
 app.use(cors())
 
 // 解析数据
 app.use(express.urlencoded({ extended: true }))
+
 
 
 // 验证tken
@@ -70,9 +73,9 @@ app.use('/api', HomeRouter)  // 首页
 app.use('/api', RegisterRouter)// 注册
 app.use('/api', LoginRoutert)// 登录
 app.use('/api', ReleaseRouter)// 上传
-app.use('/api', Detail)// 帖子详情
-// app.use('/api', Upload)// 上传个人头像模块
-app.use('/api', UserRouter)
+app.use('/api', Detail)// 帖子详情 收藏 点赞 评论 等功能
+app.use('/api', UserRouter)// 修改头像 名称等功能
+app.use('/api', StoryRouter)// 上传故事 用户删除模块
 
 
 

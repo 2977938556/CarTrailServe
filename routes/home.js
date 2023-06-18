@@ -5,9 +5,6 @@ const { v4: uuidv4 } = require('uuid')
 const fs = require('fs');
 const Cat = require('../models/Cat.js')
 const { delay } = require('../utils/UniversalFn.js');// 通用函数
-const { addListener } = require('process');
-
-
 
 
 
