@@ -15,7 +15,7 @@ const { GetIp } = require('../utils/https.js')
 async function PushImg(imgBase64, types) {
     let savePath = path.join(__dirname, `../public/uploads/userimg`);// 当前储存的地址
     let imgType = types.substring(types.lastIndexOf(".") + 1);// 图片的后缀名
-    const randomChars = `${Math.random().toString(36).substring(2, 10)}${new Date().getTime()}.${types}`// 生成一个图片名称
+    const randomChars = `${Math.random().toString(36).substring(2, 10)}${new Date().getTime()}.${imgType}`// 生成一个图片名称
     let imgUrl = path.join(savePath, randomChars);// 这个是获取用户的后缀名名称
 
     const base64Data = imgBase64.replace(/^data:image\/\w+;base64,/, '');// 这个是只截取base64后面的内容部分
@@ -53,30 +53,12 @@ router.post('/user/modifyusers', async (req, res) => {
         const userDat = await User.findOne({ user_id: req.user.username })
 
 
-
         // 这里我们需要判断是否有相同名称的用户
         const user_flage = await User.findOne({ username: username })
 
 
 
         // 这里是是需要进行判断是否有相同名称的
-
-        // 这里是查询到自己了
-        // 这里是判断是否有相同名称的用户
-        // if (user_flage != null && user_flage.user_id != req.user.username) {
-        //     return res.status(400).json({
-        //         code: 400,
-        //         message: "用户名称被使用",
-        //         result: {
-        //             message: "用户名称被使用",
-        //             data: null
-        //         }
-        //     })
-        // }
-
-
-
-
         // 这里就是说如果用户找到了那么就是找到了其他的用户有当前名称所以不能修改
         if (user_flage != null && user_flage?.user_id != req.user.username) {
             return res.status(400).json({
@@ -106,6 +88,8 @@ router.post('/user/modifyusers', async (req, res) => {
         // 假设用户上传了一张新的头像那么用户
         if (imgBase64 != null) {
             const filename = userDat.bgimgUrl.split('/').pop();// 这里我们截取出用户的数据
+
+
             let { imgUrl, savePath } = await PushImg(imgBase64, imgtype)
 
             // 这里就是需要判断是否需要进行删除掉旧的头像
@@ -140,6 +124,7 @@ router.post('/user/modifyusers', async (req, res) => {
 
 
     } catch (err) {
+        console.log(err);
         return res.status(400).json({
             code: 400,
             message: "修改失败",

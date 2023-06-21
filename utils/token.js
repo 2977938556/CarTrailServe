@@ -8,7 +8,7 @@ const secret = 'FeiMao@110Miaoya'; // 定义密钥
 // 当前时间
 const now = Math.floor(Date.now() / 1000)
 // 过期时间为一分钟后
-const expires = now + 60
+const expires = now + 20
 
 // 生成token
 exports.AddToken = (username, time) => {

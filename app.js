@@ -30,9 +30,14 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: false }))
 
 
 //开放静态资源文件
-app.use('/public/uploads/cart', express.static(path.join(__dirname, '/public/uploads/cart')))
-app.use('/public/uploads/userimg', express.static(path.join(__dirname, '/public/uploads/userimg')))
-app.use('/public/uploads/storybook', express.static(path.join(__dirname, '/public/uploads/storybook')))
+// app.use('/public/uploads/cart', express.static(path.join(__dirname, '/public/uploads/cart')))
+// app.use('/public/uploads/userimg', express.static(path.join(__dirname, '/public/uploads/userimg')))
+// app.use('/public/uploads/storybook', express.static(path.join(__dirname, '/public/uploads/storybook')))
+// app.use('/public/uploads/storybook', express.static(path.join(__dirname, '/public/uploads/storybook')))
+
+
+app.use('/public/uploads', express.static(__dirname + '/public/uploads'));
+
 
 
 //前端路由 导入路由
@@ -76,6 +81,12 @@ app.use('/api', ReleaseRouter)// 上传
 app.use('/api', Detail)// 帖子详情 收藏 点赞 评论 等功能
 app.use('/api', UserRouter)// 修改头像 名称等功能
 app.use('/api', StoryRouter)// 上传故事 用户删除模块
+
+
+
+
+
+require('./utils/config..js')
 
 
 

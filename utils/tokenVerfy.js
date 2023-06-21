@@ -3,6 +3,7 @@
 const { CheckToken } = require('./token')
 
 
+// 白名单
 let whiteList = ['/user/login', '/user/register', '/bg/login']
 exports.authMiddleware = (req, res, next) => {
     // 从请求头中获取token
