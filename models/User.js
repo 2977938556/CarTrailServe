@@ -10,8 +10,9 @@ const userSchema = new mongoose.Schema({
     created_at: { type: String, default: Date.now }, // 用户注册时间
     role: {
         type: String,
-        enum: ['user', 'admin', 'ban'],
+        enum: ['user', 'admin', 'ban', 'delete'],
         default: 'user'
+        // 分别为：普通用户 管理员 被封禁 无当前账户
     },
     configuration_information: {
         History: {

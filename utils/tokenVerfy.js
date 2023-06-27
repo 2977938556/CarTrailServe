@@ -20,8 +20,13 @@ exports.authMiddleware = (req, res, next) => {
         return res.status(401).json({ message: '登录已过期，请重新登录', result: { message: '登录已过期，请重新登录' } });
     }
 
+
     CheckToken(token).then(result => {
-        req.user = result.decoded; // 将解码后的用户信息存储到请求对象中
+        req.user = result.decoded; // 将解码后的用户信息存储到请求对象中方便日后获取用户数据
+
+        // 这里还需要验证用户是否被封禁
+
+
         next();
     }).catch(e => {
         return res.status(401).json({ message: '登录已过期，请重新登录', result: { message: '登录已过期，请重新登录' } });

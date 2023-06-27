@@ -20,7 +20,9 @@ const activitySchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now },// 创建时间
     updated_at: { type: Date, default: Date.now },// 更新时间
     participant: [{
-        type: mongoose.Schema.Types.ObjectId, ref: 'User'
+        user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        phone: { type: String, default: "空" },
+        message: { type: String, default: "无留言" },
     }]
 })
 const Activity = mongoose.model('Activit', activitySchema);
@@ -30,11 +32,13 @@ const Activity = mongoose.model('Activit', activitySchema);
 const participantSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },// 关联到User数据集合的自动生成的id
     activities: [{
-        type: mongoose.Schema.Types.ObjectId, ref: 'Activity',// 使用ref进行绑定活动
+        act_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Activity' },// 使用ref进行绑定活动
         phone: String,
         message: String,
     }]
 })
+
+// 当用户点击了提交那么我们会在当前的活动添加一个
 
 
 const Participant = mongoose.model('Participant', participantSchema);

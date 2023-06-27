@@ -4,10 +4,12 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid')
 const fs = require('fs');
 const Cat = require('../models/Cat.js')
+const User = require('../models/User.js')
 const { delay } = require('../utils/UniversalFn.js');// 通用函数
-
-
-
+const { GetDaat, GetQuery } = require('../utils/sh.js')// 获取数据模块和设置查询参数模块
+const { Activity, Participant } = require('../models/Activit.js')// 分别是一个活动一个是用户报名的模块
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 
 const carouselData = [
     {
@@ -26,33 +28,6 @@ const carouselData = [
         imgUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSn_9ltm95qVWV0e1Qa-IVBFb7WdR2xcmIgQ4fLrAfjYfWxZ6sdN4zFTrionvvp8NRRRzg&usqp=CAU'
     }
 ];
-
-
-// 200 不创建资源但是返回资源
-// 201  创建资源成功
-// 400 服务器错误
-// 401 需要验证身份
-
-
-
-router.get('/home/banner', async (req, res) => {
-    await delay(3000)
-
-    // console.log(req.user);
-    res.json({
-        code: 200,
-        message: "ok",
-        result: carouselData
-    });
-});
-
-
-
-
-
-
-
-
 
 async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendBar, userData }) {
     // 设置的默认值
@@ -124,6 +99,22 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
     })
 }
 
+// 200 不创建资源但是返回资源
+// 201  创建资源成功
+// 400 服务器错误
+// 401 需要验证身份
+
+
+router.get('/home/banner', async (req, res) => {
+    await delay(3000)
+
+    // console.log(req.user);
+    res.json({
+        code: 200,
+        message: "ok",
+        result: carouselData
+    });
+});
 
 // 获取推荐模块
 router.post('/home/recommend', async (req, res) => {
@@ -186,6 +177,168 @@ router.post('/home/recommend', async (req, res) => {
 
 
 })
+
+// 获取猫迹活动的数据
+router.post('/home/mjhddata', async (req, res) => {
+    let { page = 1, pageSize = 10, type, searchVal = "", typeofs = "mjhd" } = req.body
+
+    // 传递参数获取查询条件查询条件
+    let query = GetQuery(type, searchVal)
+
+    let data = null
+    let total = 0
+    let pageCount = 0
+
+    // 这个是用于获取数据的模块
+    let stores = { updated_at: 1 }
+
+    // 这里我们做一个判断
+    if (typeofs == "mjhd") {
+        let { totals, pageCounts, datas } = await GetDaat({ modules: Activity, query, pageSize, page, stores })
+        data = datas
+        pageCounts = pageCounts
+        total = totals
+
+        // 返回数据回去
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: data,
+                total,
+                pageCount,
+            }
+        })
+    }
+
+
+
+
+
+
+
+})
+
+// 获取活动详情页面的数据
+// 包括报名人数等数据【待获取】
+router.get('/home/mjgsdetail', async (req, res) => {
+
+    try {
+        let { _id } = req.query
+
+        let detail = await Activity.findById(_id)
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: detail,
+            }
+        })
+    } catch (error) {
+        return res.status(404).json({
+            code: 404,
+            message: "获取数据失败",
+            result: {
+                message: "获取数据失败",
+                data: null,
+            }
+        })
+    }
+
+
+
+})
+
+
+
+router.post('/home/mjgssubmit', async (req, res) => {
+    try {
+        let { _id, phone, message } = req.body
+        // 获取当前用户的数据
+        let UserDat = await User.findOne({ user_id: req.user.username })
+        // 基于当前用户查询出活动数据
+        let PushActivity = await Participant.findOne({ user_id: UserDat._id.toString() })
+
+        if (PushActivity === null) {
+            let data = await Participant.create({
+                user_id: UserDat._id,
+                activities: [
+                    {
+                        act_id: _id,
+                        phone: phone,
+                        message: message,
+                    }
+                ]
+            });
+
+            return res.status(200).json({
+                code: 200,
+                message: "申请成功",
+                result: {
+                    message: "数据返回成功",
+                    data: data,
+                }
+            })
+        }
+
+        if (PushActivity) {
+            // 找到了需要查
+            let vovle = PushActivity.activities.some((item) => {
+                if (item.act_id.toString() === _id) {
+                    return true
+                } else {
+                    return false
+                }
+            })
+
+            if (vovle) {
+                return res.status(404).json({
+                    code: 404,
+                    message: "不能重复报名",
+                    result: {
+                        message: "不能重复报名",
+                        data: null,
+                    }
+                })
+            }
+
+            // // 这里是需要进行追加数据
+            PushActivity.activities.push({
+                act_id: _id,
+                phone: phone,
+                message: message,
+            })
+
+
+            // 持久化存储数据
+            let data = await PushActivity.save()
+            return res.status(200).json({
+                code: 200,
+                message: "申请成功",
+                result: {
+                    message: "数据返回成功",
+                    data: data,
+                }
+            })
+
+
+        }
+    } catch (error) {
+        return res.status(404).json({
+            code: 404,
+            message: "服务器错误",
+            result: {
+                message: "服务器错误",
+                data: null,
+            }
+        })
+    }
+})
+
+
 
 module.exports = router;
 

@@ -14,31 +14,31 @@ const { Activity } = require('../../../models/Activit.js')
 const User = require('../../../models/User.js')
 
 
+const { GetDaat, GetQuery } = require('../../../utils/sh.js')
 
 
 
+// // 获取各个审核模块的列表数据
+// function GetDaat({ modules, query, pageSize, page, stores = { updated_at: 1 } }) {
+//     return new Promise(async (resolve, reject) => {
+//         // 总条数
+//         let totals = await modules.collection.countDocuments(query);
+//         // 有多少页数据
+//         let pageCounts = Math.ceil(totals / pageSize);
+//         // 查询数据并查询出发布者的数据并通过分页的方式返回数据
+//         let datas = await modules.find(query).populate('user_id').sort(stores).skip((page - 1) * pageSize).limit(pageSize)
 
-// 获取各个审核模块的列表数据
-function GetDaat({ modules, query, pageSize, page, stores = { updated_at: 1 } }) {
-    return new Promise(async (resolve, reject) => {
-        // 总条数
-        let totals = await modules.collection.countDocuments(query);
-        // 有多少页数据
-        let pageCounts = Math.ceil(totals / pageSize);
-        // 查询数据并查询出发布者的数据并通过分页的方式返回数据
-        let datas = await modules.find(query).populate('user_id').sort(stores).skip((page - 1) * pageSize).limit(pageSize)
-
-        if (datas != null) {
-            resolve({
-                totals,
-                pageCounts,
-                datas
-            })
-        } else {
-            reject(new Error("获取数据失败"))
-        }
-    })
-}
+//         if (datas != null) {
+//             resolve({
+//                 totals,
+//                 pageCounts,
+//                 datas
+//             })
+//         } else {
+//             reject(new Error("获取数据失败"))
+//         }
+//     })
+// }
 
 
 // 审核各个模块是函数
@@ -120,32 +120,16 @@ async function PushImg(imgBase64, types, savea, saveb) {
 // 这个是提供帖子数据的
 router.post('/bg/shdata', async (req, res) => {
     // 这三个值分别是 当前第几页 每一页的数据 返回的数据类型
+    // type的值有：whole/默认
     let { page = 1, pageSize = 10, type, searchVal = "", typeofs = "llm" } = req.body
-    // 查询条件
-    let query = {}
-    const regExp = new RegExp(searchVal, 'i'); // 不区分大小写匹配
-    // 这里判断是全部的数据的话就没有查询条件了
-    if (type == "whole") {
-        query = {}
-    } else {
-        // 这里就是返回数据回去
-        query.to_examine = type
-    }
-
-    // 这里是搜索的条件
-    if (searchVal != "") {
-        query.title = regExp
-        query.content = regExp
-        query.to_examine = regExp
-    }
 
 
-
+    // 传递参数获取查询条件查询条件
+    let query = GetQuery(type, searchVal)
 
     let data = null
     let total = 0
     let pageCount = 0
-
 
     // 这个是用于获取数据的模块
     let stores = { updated_at: -1 }
@@ -156,7 +140,6 @@ router.post('/bg/shdata', async (req, res) => {
         data = datas
         pageCounts = pageCounts
         total = totals
-
 
         // 返回数据回去
         return res.status(200).json({
@@ -186,8 +169,10 @@ router.post('/bg/shdata', async (req, res) => {
                 pageCount,
             }
         })
-    } else if (typeofs == "hdgl") {
+    } else if (typeofs == "mjhd") {
+        console.log("进来这里了");
         let { totals, pageCounts, datas } = await GetDaat({ modules: Activity, query, pageSize, page, stores })
+        console.log(datas.length);
         data = datas
         pageCounts = pageCounts
         total = totals
@@ -207,47 +192,6 @@ router.post('/bg/shdata', async (req, res) => {
 
 
 
-
-
-
-
-})
-
-
-// 修改帖子数据的(审核)
-router.post('/bg/catpass', async (req, res) => {
-    let { _id, type, typeofs } = req.body
-    let data = null
-
-    try {
-        if (typeofs == 'llm') {
-            data = await PushData({ modules: Cat, _id, type })
-        } else if (typeofs == "mjgs") {
-            data = await PushData({ modules: Story, _id, type })
-        } else if (typeofs == "hdgl") {
-            data = await PushData({ modules: Activity, _id, type })
-        }
-
-        return res.status(200).json({
-            code: 200,
-            message: "修改成功",
-            result: {
-                message: "修改成功",
-                data: data,
-            }
-        })
-
-
-    } catch (err) {
-        return res.status(404).json({
-            code: 404,
-            message: "修改失败哦",
-            result: {
-                message: "修改失败哦",
-                data: null,
-            }
-        })
-    }
 
 
 
@@ -282,7 +226,7 @@ router.get('/bg/catiddata', async (req, res) => {
                     data: data,
                 }
             })
-        } else if (typeofs == "hdgl") {
+        } else if (typeofs == "mjhd") {
             data = await GetDataId({ modules: Activity, id })
             return res.status(200).json({
                 code: 200,
@@ -311,6 +255,48 @@ router.get('/bg/catiddata', async (req, res) => {
 
 })
 
+// 修改帖子数据的(审核)
+router.post('/bg/catpass', async (req, res) => {
+    let { _id, type, typeofs } = req.body
+    let data = null
+
+    try {
+        // 流浪猫审核
+        if (typeofs == 'llm') {
+            data = await PushData({ modules: Cat, _id, type })
+            // 猫迹故事审核
+        } else if (typeofs == "mjgs") {
+            data = await PushData({ modules: Story, _id, type })
+            // 猫迹活动审核
+        } else if (typeofs == "mjhd") {
+            data = await PushData({ modules: Activity, _id, type })
+        }
+
+        return res.status(200).json({
+            code: 200,
+            message: "修改成功",
+            result: {
+                message: "修改成功",
+                data: data,
+            }
+        })
+
+
+    } catch (err) {
+        return res.status(404).json({
+            code: 404,
+            message: "修改失败哦",
+            result: {
+                message: "修改失败哦",
+                data: null,
+            }
+        })
+    }
+
+
+
+
+})
 
 // 存储活动数据
 router.post('/bg/activity', async (req, res) => {
@@ -343,6 +329,7 @@ router.post('/bg/activity', async (req, res) => {
         })
 
     } catch (err) {
+        console.log(err);
         return res.status(404).json({
             code: 404,
             message: "发布失败",
@@ -360,6 +347,7 @@ router.post('/bg/activity', async (req, res) => {
 
 
 // 审核活动模块
+
 
 
 

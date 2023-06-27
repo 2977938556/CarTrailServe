@@ -38,12 +38,7 @@ async function PushImg(imgBase64, types) {
 }
 
 
-
-
-
-
-
-// 这里有bug下午进行处理
+// 修改用户头像和名称
 router.post('/user/modifyusers', async (req, res) => {
 
     try {
@@ -137,6 +132,45 @@ router.post('/user/modifyusers', async (req, res) => {
 
 
 
+
+
+})
+
+
+
+// 获取用户数据模块
+router.get('/user/userData', async (req, res) => {
+    try {
+        let { _id } = req.query
+        let data = await User.findById(_id)
+        if (data !== null) {
+            return res.status(200).json({
+                code: 200,
+                message: "获取数据成功",
+                result: {
+                    message: "获取数据成功",
+                    data: data
+                }
+            })
+        }
+        return res.status(404).json({
+            code: 404,
+            message: "当前账户被封禁了",
+            result: {
+                message: "当前账户被封禁了",
+                data: null
+            }
+        })
+    } catch (err) {
+        return res.status(404).json({
+            code: 404,
+            message: "服务器错误",
+            result: {
+                message: "服务器错误",
+                data: null
+            }
+        })
+    }
 
 
 })
