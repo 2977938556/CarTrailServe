@@ -170,7 +170,6 @@ router.post('/bg/shdata', async (req, res) => {
             }
         })
     } else if (typeofs == "mjhd") {
-        console.log("进来这里了");
         let { totals, pageCounts, datas } = await GetDaat({ modules: Activity, query, pageSize, page, stores })
         console.log(datas.length);
         data = datas

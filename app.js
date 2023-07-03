@@ -4,6 +4,7 @@ const cors = require('cors')
 const path = require('path')
 const mongoose = require('mongoose')
 const { authMiddleware } = require('./utils/tokenVerfy.js')
+const { Userpermissions } = require('./utils/Userpermissions.js')
 
 
 
@@ -30,12 +31,6 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: false }))
 
 
 //开放静态资源文件
-// app.use('/public/uploads/cart', express.static(path.join(__dirname, '/public/uploads/cart')))
-// app.use('/public/uploads/userimg', express.static(path.join(__dirname, '/public/uploads/userimg')))
-// app.use('/public/uploads/storybook', express.static(path.join(__dirname, '/public/uploads/storybook')))
-// app.use('/public/uploads/storybook', express.static(path.join(__dirname, '/public/uploads/storybook')))
-
-
 app.use('/public/uploads', express.static(__dirname + '/public/uploads'));
 
 
@@ -48,9 +43,8 @@ const ReleaseRouter = require('./routes/release.js')// 上传模块
 const Detail = require('./routes/detail.js')// 详情模块
 const UserRouter = require('./routes/user.js')// 用户中心模块
 const StoryRouter = require('./routes/story.js')// 猫迹故事模块
-const UploadsRouter = require('./routes/upload.js')
-
-
+const UploadsRouter = require('./routes/upload.js')// 上传模块【测试七牛云】
+const AcatilyRouter = require('./routes/activit.js')// 活动模块
 
 
 
@@ -69,6 +63,9 @@ app.use(express.urlencoded({ extended: true }))
 
 // 验证tken
 app.use(authMiddleware)
+// 验证用户
+app.use(Userpermissions)
+
 
 // 配置路由
 app.use('/api', HomeRouter)  // 首页
@@ -78,7 +75,8 @@ app.use('/api', ReleaseRouter)// 上传
 app.use('/api', Detail)// 帖子详情 收藏 点赞 评论 等功能
 app.use('/api', UserRouter)// 修改头像 名称等功能
 app.use('/api', StoryRouter)// 上传故事 用户删除模块
-app.use('/api', UploadsRouter)
+app.use('/api', UploadsRouter)// 上传模块
+app.use('/api', AcatilyRouter)
 
 
 

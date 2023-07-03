@@ -25,7 +25,7 @@ const activitySchema = new mongoose.Schema({
         message: { type: String, default: "无留言" },
     }]
 })
-const Activity = mongoose.model('Activit', activitySchema);
+const Activity = mongoose.model('Activity', activitySchema);
 
 
 // 这是一个用户报名的活动列表

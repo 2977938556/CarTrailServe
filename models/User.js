@@ -10,9 +10,9 @@ const userSchema = new mongoose.Schema({
     created_at: { type: String, default: Date.now }, // 用户注册时间
     role: {
         type: String,
-        enum: ['user', 'admin', 'ban', 'delete'],
+        enum: ['user', 'admin', 'ban', 'delete', 'institution', 'business'],
         default: 'user'
-        // 分别为：普通用户 管理员 被封禁 无当前账户
+        // 分别为：普通用户 管理员 被封禁 无当前账户 机构 商家
     },
     configuration_information: {
         History: {
@@ -26,6 +26,12 @@ const userSchema = new mongoose.Schema({
             default: true,
         },// 是否开启私信
     },
+    bantimt: {
+        createdTime: { type: Date },// 开始时间
+        endTime: { type: Date },// 封禁结束时间
+        deleteTime: { type: Date }// 删除用户的时间
+    }
+    // 封禁的时间
 })
 
 

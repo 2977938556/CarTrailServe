@@ -63,6 +63,19 @@ router.post('/bg/login', async (req, res) => {
         }
 
         // 判断是否是管理
+        if (userObj.role == "delete") {
+            return res.status(400).json({
+                code: 400,
+                message: "没有当前账户",
+                result: {
+                    message: "没有当前账户",
+                    data: null
+                },
+            })
+        }
+
+
+        // 判断是否是管理
         if (userObj.role != "admin") {
             return res.status(400).json({
                 code: 400,
