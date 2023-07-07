@@ -9,7 +9,8 @@ const { GetIp } = require('../utils/https.js')
 const User = require('../models/User.js')
 const qiniu = require('qiniu');
 const { ImgUpdate } = require('../utils/ImgUpdate.js')
-
+const { StoryComment, StoryReply } = require('../models/StoryComment.js')
+const { GetCommentDetailData, GetCommentReplay, GetCommentHfreplay, GetPushStoreLink } = require('../utils/comment.js')
 
 
 
@@ -65,11 +66,8 @@ async function PushImg(imgBase64, types, serve = "cat") {
 }
 
 
-
-
-// 获取故事模块
+// 获取故事列表模块
 router.post('/mjgs/storylist', async (req, res) => {
-    console.log("获取成功");
     let { page = 1, pageSize = 3, store = -1, content, clickCount } = req.body
     let query = {}
 
@@ -100,16 +98,13 @@ router.post('/mjgs/storylist', async (req, res) => {
 })
 
 
-
-
-// 发布故事
+// 发布故事模块
 router.post('/mjgs/storysubmit', async (req, res) => {
     try {
 
         let { FormDataList, inputData } = req.body
 
         let imageUrl = await ImgUpdate(FormDataList)
-
 
         //  存储到数据库中
         let story = await Story.create({
@@ -145,13 +140,19 @@ router.post('/mjgs/storysubmit', async (req, res) => {
 })
 
 
-// 基于id获取参加的活动列表
+// 基于id获取当前的故事详情
 router.get('/mjgs/storydetail', async (req, res) => {
 
     try {
         let { _id } = req.query
 
+
+        console.log(_id);
+
         let detail = await Story.findById({ _id: _id }).populate('user_id')
+
+
+        console.log(_id, "测试");
 
         return res.status(200).json({
             code: 200,
@@ -178,7 +179,261 @@ router.get('/mjgs/storydetail', async (req, res) => {
 })
 
 
+// 基于故事id获取进行分页获取评论的数据
+router.get('/mjgs/detail/comment', async (req, res,) => {
+    try {
+        // 携带评论 
+        let { _id, page = 1, pageSize = 5, sort = 1 } = req.query
 
+
+        const skip = (page - 1) * pageSize; // 跳过的数据量
+
+        // 这里获取总条数
+        const total = await StoryComment.countDocuments({ StoryId: _id });
+
+        const commitData = await StoryComment.find({ StoryId: _id })
+            .populate([
+                { path: "commenter" },
+                {
+                    path: "replies",
+                    populate: [
+                        {
+                            path: "replier",
+                            model: "User",
+                        },
+                        {
+                            path: "parentId",
+                            model: "StoryComment",
+                        },
+                    ],
+                },
+            ]).sort({ createTime: sort })
+            .skip(skip)
+            .limit(pageSize);
+
+        await delay(100)
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: commitData,
+                total,
+            }
+        })
+
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            code: 400,
+            message: "或数据失败",
+            result: {
+                message: "或数据失败",
+                data: null
+
+            }
+        })
+    }
+
+})
+
+// 发布评论
+router.post('/mjgs/detail/replay', async (req, res,) => {
+    try {
+        // 携带评论 
+        let { content, _id, user_id } = req.body
+
+        // 这里是添加评论的数据
+        let commentData = new StoryComment({
+            StoryId: _id,
+            content: content,
+            commenter: user_id,
+            replyCount: 0,
+        })
+        // 这里是储存用户数据模块
+        let result = await commentData.save()
+
+
+
+        let data = await StoryComment.findById({ _id: result._id.toString() }).populate([{
+            path: "commenter"
+        }])
+
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: data
+
+            }
+        })
+
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            code: 400,
+            message: "发布评论失败",
+            result: {
+                message: "发布评论失败",
+                data: null
+
+            }
+        })
+    }
+
+})
+
+
+
+
+
+
+
+
+
+// 会需要通用的模块
+
+// 基于评论的id返回主要的评论数据
+router.get('/comment/detail', async (req, res) => {
+    try {
+        // _id是需要查询的评论id，type是需要查询哪个模块的数据
+        let { _id, type } = req.query
+        console.log(_id, type);
+
+        console.log(_id, type);
+
+
+        // 需要传递一个当前的id和需要查询的数据模块
+        let data = await GetCommentDetailData(_id, type)
+        console.log(data);
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: data,
+            }
+        })
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            code: 400,
+            message: "获取数据失败",
+            result: {
+                message: "获取数据失败",
+                data: null,
+            }
+        })
+    }
+
+
+
+})
+
+
+// 基于父级评论的进行分页的查询出分页的回复的数据
+router.get('/replay/detail', async (req, res) => {
+    try {
+        // 分别是 当前页面 需要返回多少数据 父级评论的id，是哪个模块的
+        let { page, pageSize = 1, parentId, type } = req.query
+
+        let data = await GetCommentReplay({ page, pageSize, parentId, type })
+
+
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: data,
+            }
+        })
+
+    } catch (err) {
+        return res.status(400).json({
+            code: 400,
+            message: "获取数据失败",
+            result: {
+                message: "获取数据失败",
+                data: null,
+            }
+        })
+    }
+
+
+
+})
+
+// 发布回复评论
+router.post('/mjgs/detail/hfreplay', async (req, res) => {
+    try {
+        // 分别是回复的内容 回复的评论id  回复的用户id
+        let { content, commentId, user_id, type } = req.body
+
+        console.log(content, commentId, user_id, type);
+
+        let data = await GetCommentHfreplay({ content, commentId, user_id, type })
+
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: data,
+            }
+        })
+
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            code: 400,
+            message: "回复失败",
+            result: {
+                message: "回复失败",
+                data: null,
+            }
+        })
+    }
+})
+
+// 点赞模块
+router.post('/mjgs/detail/PushStoryLike', async (req, res) => {
+    try {
+        // 需要 用户id 和点赞的评论
+        let { userId, commentId, type } = req.body
+
+
+        let result = await GetPushStoreLink({ userId, commentId, type })
+
+        return res.status(200).json({
+            code: 200,
+            message: "点赞成功",
+            result: {
+                message: "点赞成功",
+                data: result,
+            }
+        })
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            code: 400,
+            message: "点赞失败",
+            result: {
+                message: "点赞失败",
+                data: null,
+            }
+        })
+    }
+})
 
 
 module.exports = router;

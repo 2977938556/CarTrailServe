@@ -134,8 +134,6 @@ router.post('/release/filte', async (req, res) => {
         // 分别是 文件数据，input数据，用户数据
         let { FormDataList, inputData, UserDat } = req.body
 
-        console.log(FormDataList);
-
         let imgUrlList = await ImgUpdate(FormDataList)
 
         // 设计然后加入用户id进行连表查询

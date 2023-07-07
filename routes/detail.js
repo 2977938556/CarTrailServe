@@ -270,8 +270,6 @@ router.post('/detail/collect', async (req, res) => {
     // 第二个是作品是否被收藏，
     // 第三个是作品的数据
     let { DetailData, cat_id, userData, collectFlage } = req.body
-
-
     try {
 
         // 思路大概是这样的
@@ -522,11 +520,11 @@ router.post('/detail/addup', async (req, res) => {
 })
 
 
+
 // 储存用户的回复的信息
 router.post('/detail/reply', async (req, res) => {
     // 分别是回复的内容 回复的评论id  回复的用户id
     let { CommenTvalue, replyVal, commenter } = req.body
-
 
     let Replay = new Reply({
         content: CommenTvalue,

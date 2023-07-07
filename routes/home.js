@@ -126,7 +126,6 @@ router.post('/home/recommend', async (req, res) => {
 
         if (CatRecommendBar == "A") {
             GetHomeRecommend({ ...req.body }).then(value => {
-                console.log("测试", value);
             })
         }
 

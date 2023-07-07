@@ -14,6 +14,8 @@ const { Activity } = require('../../../models/Activit.js')
 const User = require('../../../models/User.js')
 
 
+
+// 分别是获取数据列表和 基于提交数据返回需要进行查询的参数
 const { GetDaat, GetQuery } = require('../../../utils/sh.js')
 
 
@@ -41,7 +43,7 @@ const { GetDaat, GetQuery } = require('../../../utils/sh.js')
 // }
 
 
-// 审核各个模块是函数
+// 这个是审核模块封装的函数
 async function PushData({ modules, _id, type }) {
     return new Promise(async (resolve, reject) => {
         // 这里是审核通过的情况，还需要发送一个信息给用户说已经审核完成 未完成也是一样的
@@ -88,17 +90,15 @@ async function GetDataId({ modules, id }) {
 }
 
 
-// 保存图片
+// 添加活动活动模块 待修改
 async function PushImg(imgBase64, types, savea, saveb) {
     let savePath = path.join(__dirname, `${savea}`);// 当前储存的地址
     let imgType = types.substring(types.lastIndexOf("/") + 1);// 图片的后缀名
     const randomChars = `${Math.random().toString(36).substring(2, 10)}${new Date().getTime()}.${imgType}`// 生成一个图片名称
     let imgUrl = path.join(savePath, randomChars);// 这个是获取用户的后缀名名称
 
-
     const base64Data = imgBase64.replace(/^data:image\/\w+;base64,/, '');// 这个是只截取base64后面的内容部分
     const buffer = Buffer.from(base64Data, 'base64');// 这个转换成bufer流
-
 
     return new Promise((resolve, reject) => {
         fs.writeFile(imgUrl, buffer, async (err) => {
@@ -123,7 +123,6 @@ router.post('/bg/shdata', async (req, res) => {
     // type的值有：whole/默认
     let { page = 1, pageSize = 10, type, searchVal = "", typeofs = "llm" } = req.body
 
-
     // 传递参数获取查询条件查询条件
     let query = GetQuery(type, searchVal)
 
@@ -137,6 +136,7 @@ router.post('/bg/shdata', async (req, res) => {
     // 这里我们做一个判断
     if (typeofs === "llm") {
         let { totals, pageCounts, datas } = await GetDaat({ modules: Cat, query, pageSize, page })
+
         data = datas
         pageCounts = pageCounts
         total = totals
@@ -154,6 +154,7 @@ router.post('/bg/shdata', async (req, res) => {
         })
     } else if (typeofs === "mjgs") {
         let { totals, pageCounts, datas } = await GetDaat({ modules: Story, query, pageSize, page })
+
         data = datas
         pageCounts = pageCounts
         total = totals
@@ -171,7 +172,6 @@ router.post('/bg/shdata', async (req, res) => {
         })
     } else if (typeofs == "mjhd") {
         let { totals, pageCounts, datas } = await GetDaat({ modules: Activity, query, pageSize, page, stores })
-        console.log(datas.length);
         data = datas
         pageCounts = pageCounts
         total = totals
@@ -197,7 +197,7 @@ router.post('/bg/shdata', async (req, res) => {
 
 })
 
-// 这里是需要通过id查询出当前的帖子数据
+// 基于id查询出当前需要详细查看的数据
 router.get('/bg/catiddata', async (req, res) => {
     try {
         // 获取当前的帖子的id
@@ -303,6 +303,7 @@ router.post('/bg/activity', async (req, res) => {
 
     try {
         let users = await User.findOne({ user_id: req.user.username })
+
 
         let { imgUrl } = await PushImg(base64, imgType, '../../../public/uploads/activity', '/public/uploads/activity')
 
