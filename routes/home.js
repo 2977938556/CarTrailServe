@@ -30,10 +30,6 @@ const carouselData = [
 
 async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendBar = "B", userData }) {
 
-
-
-
-    // 设置的默认值
     page = page || 1
     pageSize = pageSize || 3
     // 先判断是否是有地区的
@@ -122,8 +118,6 @@ router.get('/home/banner', async (req, res) => {
 router.post('/home/recommend', async (req, res) => {
     let { CatRecommendBar = "B" } = req.body;
     try {
-
-
         if (CatRecommendBar == "A") {
             GetHomeRecommend({ ...req.body }).then(value => {
             })

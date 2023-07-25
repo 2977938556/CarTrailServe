@@ -10,9 +10,9 @@ const CatSchema = new mongoose.Schema({
     clickCount: { type: Number, default: 0 },// 帖子的点击量
     to_examine: {
         type: String,
-        enum: ['examine', 'pass', 'nopass'],
+        enum: ['examine', 'pass', 'nopass', 'offine', 'delete', "ok"],
         default: 'examine'
-    },// 审核判断 【审核中，通过，未通过】
+    },// 审核判断 【审核中，通过，未通过,下线，上线,删除,已完成】
     Successful_adoption: {
         type: Boolean, default: false
     },// 这个是判断是否被申请了

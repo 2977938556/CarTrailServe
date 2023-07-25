@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 
-const StorySchema = new mongoose.Schema({
+const GuideSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },// 关联到User数据集合的自动生成的id
     title: { type: String, },// 标题
     content: { type: String, required: true },// 内容
     imageUrl: { type: Array, require: true },// 图片数据存储的是图片地址
-    clickCount: { type: Number, default: 0 },// 故事的点击量
+    clickCount: { type: Number, default: 0 },// 点击量
+    lable: { type: Array },// 标签
     to_examine: {
         type: String,
         enum: ['examine', 'pass', 'nopass', 'offine', 'delete', "ok"],
@@ -17,8 +18,8 @@ const StorySchema = new mongoose.Schema({
 })
 
 
-const Story = mongoose.model('Story', StorySchema);
+const Guide = mongoose.model('Guide', GuideSchema);
 
 
-module.exports = Story;
+module.exports = Guide;
 

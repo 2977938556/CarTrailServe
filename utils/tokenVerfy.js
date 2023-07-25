@@ -1,6 +1,8 @@
 
 // 验证tokne是否合法与过期
 const { CheckToken } = require('./token')
+const User = require('../models/User.js')
+
 
 
 // 白名单
@@ -21,10 +23,21 @@ exports.authMiddleware = (req, res, next) => {
     }
 
 
-    CheckToken(token).then(result => {
+    CheckToken(token).then(async (result) => {
         req.user = result.decoded; // 将解码后的用户信息存储到请求对象中方便日后获取用户数据
-
         // 这里还需要验证用户是否被封禁
+        let user = await User.findOne({ user_id: req.user.username })
+        // if (user === null) {
+        //     return res.status(401).json({
+        //         code: 401,
+        //         message: "不存在当前账户",
+        //         result: {
+        //             message: "不存在当前账户",
+        //             data: user
+        //         },
+        //     })
+        // }
+
 
 
         next();

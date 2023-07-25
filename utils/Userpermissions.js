@@ -65,18 +65,18 @@ const User = require('../models/User.js')
 let whiteList = ['/storysubmit', '/replay']
 
 exports.Userpermissions = async (req, res, next) => {
+    // 获取用户信息
 
     let index = whiteList.some(item => req.url.includes(item))
     if (!index) {
         return next()
     }
 
-
-    // 获取用户信息
     let user = await User.findOne({ user_id: req.user.username })
+
+
     // 将用户的id保存到 req 中以便其他操作使用
     req.user.user_id = user._id;
-
 
     if (!user || user.role === "delete") {
         return res.status(401).json({

@@ -61,8 +61,10 @@ app.use(cors())
 // 解析数据
 app.use(express.urlencoded({ extended: true }))
 
+
 // 验证tken
 app.use(authMiddleware)
+
 // 验证用户
 app.use(Userpermissions)
 

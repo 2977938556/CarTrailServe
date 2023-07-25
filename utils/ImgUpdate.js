@@ -25,12 +25,8 @@ const formUploader = new qiniu.form_up.FormUploader(config);
 const putExtra = new qiniu.form_up.PutExtra();
 
 
-
-
-
 // 有一个函数用于循环数组将所有的数据都变成转换成一个Buffer 使用promise进行
 function ConVentImg(imgData) {
-    // return new Promise((r))
     return imgData.map(item => {
         return new Promise((resolve, reject) => {
             const base64Data = item.base64.replace(/^data:image\/\w+;base64,/, '');// 这个是只截取base64后面的内容部分
@@ -49,6 +45,8 @@ function ConVentImg(imgData) {
 
 }
 
+
+
 exports.ImgUpdate = async (ImgDataArray) => {
     try {
         return new Promise(async (resolve, reject) => {
@@ -60,20 +58,22 @@ exports.ImgUpdate = async (ImgDataArray) => {
                 return new Promise((resolve, reject) => {
                     formUploader.put(uploadToken, item.imgName, item.buffer, putExtra, function (respErr, respBody, respInfo) {
                         if (respErr) {
-                            reject(new Error("文件上传失败"))
+                            // reject(new Error("文件上传失败"))
+                            reject("文件上传失败")
                         }
                         if (respInfo.statusCode === 200) {
+                            console.log(respBody.key);
                             resolve(`http://rwyswjtk7.hn-bkt.clouddn.com/${respBody.key}`)
                         } else {
-                            reject(new Error("文件上传失败"))
+                            // reject(new Error("文件上传失败"))
+                            reject("文件上传失败")
                         }
                     });
                 })
             })
-
             resolve(await Promise.all(s))
         })
     } catch (err) {
-        reject("图片上传失败了")
+        return Promise.reject("图片上传失败了")
     }
 }

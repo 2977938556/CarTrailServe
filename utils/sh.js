@@ -22,16 +22,25 @@ function GetDaat({ modules, query, pageSize, page, stores = { updated_at: 1 } })
 
 
 // 基于提交的数据返回一个查询条件
-function GetQuery(type, searchVal) {
+// 这里分别是查询的条件，input查询的参数 是否是用户
+function GetQuery(type, searchVal, typeofs) {
     let query = {}
-    const regExp = new RegExp(searchVal, 'i'); // 不区分大小写匹配
+    const regExp = new RegExp(searchVal, 'is'); // 不区分大小写匹配
 
     // 这里的状态是指g关于流浪猫的情况
     if (type == "whole") {
         query = {}
     } else {
         // 这里就是返回数据回去
-        query.to_examine = type
+        // 这里是特殊情况由于用户没有数据to_examine 属性所以呢就需要进行判断一下
+        // query.role = type
+        // 这里需要进行一个判断这里因为是用户模块所以需要设置判断是否是yjgl
+        if (typeofs == 'yhgl') {
+            query.role = type
+        } else {
+            query.to_examine = type
+        }
+
     }
 
     // 这里是搜索的条件
@@ -39,6 +48,8 @@ function GetQuery(type, searchVal) {
         query.title = regExp
         query.content = regExp
     }
+
+
 
     return query
 }

@@ -23,12 +23,9 @@ async function checkCollectionExists(collectionName) {
 
 // 获取帖子详情的数据
 router.get('/detail/cate', async (req, res) => {
-
-
     try {
         // 这里是查找到帖子的数据再把用户的数据也给查询出来
         let DetailData = await Cat.findOne({ cat_id: req.query.id }).populate('user_id')
-
 
         // 这里还需要查找一条评价信息
         let commentData = await Comment.find({ CatId: DetailData._id }) || ""
@@ -40,10 +37,9 @@ router.get('/detail/cate', async (req, res) => {
         // 保存数据
         await post.save();
 
-
-
+        // 审核判断 【审核中，通过，未通过,下线，上线,删除,已完成】
         // 这里是没有该帖子的数据需要阻断后面的数据返回
-        if (!DetailData) {
+        if (!DetailData || ['examine', 'nopass', 'offine', 'delete'].includes(DetailData.to_examine)) {
             return res.status(400).json({
                 code: 400,
                 message: "数据获取失败",
@@ -53,8 +49,6 @@ router.get('/detail/cate', async (req, res) => {
                 }
             })
         }
-
-
 
 
         // 这里我们需要获取当前登录的用户id

@@ -101,11 +101,8 @@ router.post('/mjgs/storylist', async (req, res) => {
 // 发布故事模块
 router.post('/mjgs/storysubmit', async (req, res) => {
     try {
-
         let { FormDataList, inputData } = req.body
-
         let imageUrl = await ImgUpdate(FormDataList)
-
         //  存储到数据库中
         let story = await Story.create({
             user_id: req.user.user_id,// 关联到User数据集合的自动生成的id
@@ -146,13 +143,8 @@ router.get('/mjgs/storydetail', async (req, res) => {
     try {
         let { _id } = req.query
 
-
-        console.log(_id);
-
         let detail = await Story.findById({ _id: _id }).populate('user_id')
 
-
-        console.log(_id, "测试");
 
         return res.status(200).json({
             code: 200,

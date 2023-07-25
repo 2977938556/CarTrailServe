@@ -74,7 +74,6 @@ router.post('/bg/login', async (req, res) => {
             })
         }
 
-
         // 判断是否是管理
         if (userObj.role != "admin") {
             return res.status(400).json({

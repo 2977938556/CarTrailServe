@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
     mobile: { type: String, required: true },// 用户手机号
     slogin: { type: String, default: "领养替代购买" },// 用户标语
     bgimgUrl: { type: String, default: 'https://img.js.design/assets/img/6437f726bacae957a1524acb.png' },// 用户头像
-    created_at: { type: String, default: Date.now }, // 用户注册时间
+    created_at: { type: Date, default: Date.now }, // 用户注册时间
     role: {
         type: String,
         enum: ['user', 'admin', 'ban', 'delete', 'institution', 'business'],
