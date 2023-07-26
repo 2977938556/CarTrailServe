@@ -45,6 +45,7 @@ const UserRouter = require('./routes/user.js')// 用户中心模块
 const StoryRouter = require('./routes/story.js')// 猫迹故事模块
 const UploadsRouter = require('./routes/upload.js')// 上传模块【测试七牛云】
 const AcatilyRouter = require('./routes/activit.js')// 活动模块
+const GuideRouter = require('./routes/guide.js')// 养猫指南模块
 
 
 
@@ -78,7 +79,8 @@ app.use('/api', Detail)// 帖子详情 收藏 点赞 评论 等功能
 app.use('/api', UserRouter)// 修改头像 名称等功能
 app.use('/api', StoryRouter)// 上传故事 用户删除模块
 app.use('/api', UploadsRouter)// 上传模块
-app.use('/api', AcatilyRouter)
+app.use('/api', AcatilyRouter)// 活动模块
+app.use('/api', GuideRouter)
 
 
 
@@ -89,7 +91,7 @@ require('./utils/config..js')
 
 
 
-// 后端配置的路由
+// 后台管理模块
 app.use('/api', BgLogin)// 后端登录
 // app.use('/api', ShLlmGl)// 审核流浪猫管理
 app.use('/api', sh_llmgl)

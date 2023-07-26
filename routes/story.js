@@ -86,9 +86,9 @@ router.post('/mjgs/storylist', async (req, res) => {
 
     res.status(201).json({
         code: 201,
-        message: "发布成功",
+        message: "获取数据成功",
         result: {
-            message: "发布成功",
+            message: "获取数据成功",
             data: data
         },
     });
