@@ -294,14 +294,8 @@ router.get('/comment/detail', async (req, res) => {
     try {
         // _id是需要查询的评论id，type是需要查询哪个模块的数据
         let { _id, type } = req.query
-        console.log(_id, type);
-
-        console.log(_id, type);
-
-
         // 需要传递一个当前的id和需要查询的数据模块
         let data = await GetCommentDetailData(_id, type)
-        console.log(data);
 
         return res.status(200).json({
             code: 200,
@@ -313,7 +307,7 @@ router.get('/comment/detail', async (req, res) => {
         })
 
     } catch (err) {
-        console.log(err);
+
         return res.status(400).json({
             code: 400,
             message: "获取数据失败",
@@ -323,8 +317,6 @@ router.get('/comment/detail', async (req, res) => {
             }
         })
     }
-
-
 
 })
 

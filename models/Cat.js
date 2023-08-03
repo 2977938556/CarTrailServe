@@ -12,10 +12,10 @@ const CatSchema = new mongoose.Schema({
         type: String,
         enum: ['examine', 'pass', 'nopass', 'offine', 'delete', "ok"],
         default: 'examine'
-    },// 审核判断 【审核中，通过，未通过,下线，上线,删除,已完成】
+    },// 审核判断 【审核中，通过，未通过,下线,删除,已完成】
     Successful_adoption: {
         type: Boolean, default: false
-    },// 这个是判断是否被申请了
+    },// 判断是否被成功领养了
     isApproved: { type: Boolean, default: true }, // 是否审核
     lable: { type: Array, require: true },// 标签
     created_at: { type: Date, default: Date.now },// 创建时间

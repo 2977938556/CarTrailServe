@@ -6,6 +6,7 @@ let Collect = require('../models/Collect.js')
 let { History, Like } = require('../models/CatHistory.js')
 let { Comment, Reply } = require('../models/Comment.js')
 let { Follow } = require('../models/FollowUser.js')
+let { ApplyFor } = require('../models/Adopt.js')
 
 const { decryptPssword } = require('../utils/encryption.js')
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
@@ -722,6 +723,90 @@ router.post('/detail/follows', async (req, res) => {
 
 
 })
+
+
+// 申请领养模块
+router.post('/detail/applyfor', async (req, res) => {
+    try {
+        let { _id, message } = req.body
+
+
+        // // 查询出用户
+        let UserDat = await User.findOne({ user_id: req.user.username })
+
+        // // 查询出帖子
+        let CatData = await Cat.findById(_id).populate('user_id')
+
+
+        console.log(UserDat._id);
+
+        // console.log(_id, CatData.user_id._id, UserDat._id);
+        // { fuser_id: String(CatData.user_id._id) }
+        // { user_id: String(UserDat._id) },
+
+
+
+        let s = await ApplyFor.findOne({
+            $and: [
+                { cat_id: _id },// 基于帖子的id查询
+                { user_id: String(UserDat._id) },
+                { fuser_id: String(CatData.user_id._id) }
+            ]
+        })
+
+
+        if (s != null) {
+            return res.status(400).json({
+                code: 400,
+                message: "已经申请过了",
+                result: {
+                    message: "已经申请过了",
+                    data: null,
+                }
+            })
+        } else {
+            let data = await ApplyFor.create({
+                cat_id: CatData._id,// 猫咪ID
+                user_id: UserDat._id,// 申请者
+                fuser_id: CatData.user_id._id,// 发布者
+                content: message,
+            })
+
+            // 返回状态
+            return res.status(200).json({
+                code: 200,
+                message: "申请成功",
+                result: {
+                    message: "申请成功",
+                    data: data,
+                }
+            })
+
+
+        }
+
+
+
+    } catch (err) {
+        console.log(err);
+        // // 返回状态
+        return res.status(400).json({
+            code: 400,
+            message: "申请失败",
+            result: {
+                message: "申请失败",
+                data: null,
+            }
+        })
+    }
+
+
+
+})
+
+
+
+
 
 
 

@@ -2,6 +2,7 @@
 // 每一个数组需要又图片名称图片base64数据 还有图片大小
 const qiniu = require('qiniu');
 
+const Urls = "ryhi4ojn4.hn-bkt.clouddn.com"
 
 
 // 第三步：配置七牛云密钥和存储区域
@@ -11,7 +12,7 @@ const mac = new qiniu.auth.digest.Mac(accessKey, secretKey);
 
 // 需要保存的空间
 const options = {
-    scope: 'abcdefg',
+    scope: 'abcdeefg',
 };
 
 const config = new qiniu.conf.Config();
@@ -42,38 +43,42 @@ function ConVentImg(imgData) {
             }
         })
     })
-
 }
-
 
 
 exports.ImgUpdate = async (ImgDataArray) => {
     try {
-        return new Promise(async (resolve, reject) => {
-            // 获取已经转换过的数据
-            let ImgData = await Promise.all(ConVentImg(ImgDataArray))
+        const results = await Promise.all(ConVentImg(ImgDataArray));
 
-            // 这里是基于上面的数据进行七牛云的上传
-            let s = ImgData.map(item => {
-                return new Promise((resolve, reject) => {
-                    formUploader.put(uploadToken, item.imgName, item.buffer, putExtra, function (respErr, respBody, respInfo) {
-                        if (respErr) {
-                            // reject(new Error("文件上传失败"))
-                            reject("文件上传失败")
-                        }
-                        if (respInfo.statusCode === 200) {
-                            console.log(respBody.key);
-                            resolve(`http://rwyswjtk7.hn-bkt.clouddn.com/${respBody.key}`)
-                        } else {
-                            // reject(new Error("文件上传失败"))
-                            reject("文件上传失败")
-                        }
-                    });
-                })
-            })
-            resolve(await Promise.all(s))
-        })
-    } catch (err) {
-        return Promise.reject("图片上传失败了")
+        const uploadPromises = results.map(item => {
+            return new Promise((resolve, reject) => {
+                formUploader.put(uploadToken, item.imgName, item.buffer, putExtra, function (respErr, respBody, respInfo) {
+                    if (respErr || respInfo.statusCode !== 200) {
+                        console.log("文件上传失败");
+                        resolve({ success: false, error: "文件上传失败" });
+                    } else {
+                        console.log(respBody.key);
+                        resolve({ success: true, url: `http://${Urls}/${respBody.key}` });
+                    }
+                });
+            });
+        });
+
+        const uploadResults = await Promise.allSettled(uploadPromises);
+
+        // 检查是否有上传失败的情况
+        const errorResults = uploadResults.filter(result => result.status === 'rejected');
+        if (errorResults.length > 0) {
+            const errors = errorResults.map(result => result.reason);
+            console.log("上传出错", errors);
+            throw new Error("文件上传失败");
+        }
+        // 提取成功上传的结果
+        const successResults = uploadResults.filter(result => result.status === 'fulfilled').map(result => result.value.url);
+        return successResults
+        // 在这里可以处理成功上传的结果
+    } catch (error) {
+        // 处理错误
+        throw new Error("发布失败");
     }
 }

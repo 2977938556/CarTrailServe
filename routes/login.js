@@ -12,8 +12,6 @@ router.post('/user/login', (req, res) => {
     // 如果没有查到那么就提示登录
     // 如果查询到了那么就将当前的密码进行比对
     // 明天早上完成加油啦 FeiMao@110
-    console.log(username, password);
-
 
     try {
         // 查询用户

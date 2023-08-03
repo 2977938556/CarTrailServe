@@ -8,14 +8,25 @@ const User = require('../models/User.js')
 // 白名单
 let whiteList = ['/user/login', '/user/register', '/bg/login']
 exports.authMiddleware = (req, res, next) => {
-    // 从请求头中获取token
+
+
 
     // 验证是否在白名单中的数据是的话就进行下一步操作不进行验证
     if (whiteList.some(item => req.url.indexOf(item) != -1)) {
         return next()
     }
     // 截取出用户的token
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.authorization?.split(' ')[1] || "";
+
+
+
+
+    // console.log(;
+    // 从请求头中获取token
+    if (req.url.includes('/socket.io') && token == "") {
+        console.log("是没有token");
+        return next()
+    }
 
     // 判断是否有token 
     if (!token) {

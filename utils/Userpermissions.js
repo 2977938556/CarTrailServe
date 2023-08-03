@@ -67,7 +67,16 @@ let whiteList = ['/storysubmit', '/replay']
 exports.Userpermissions = async (req, res, next) => {
     // 获取用户信息
 
+
+
+
     let index = whiteList.some(item => req.url.includes(item))
+
+    // if (req.url.includes('/socket.io') && index == false) {
+    //     console.log("是没有token01");
+    //     return next()
+    // }
+
     if (!index) {
         return next()
     }

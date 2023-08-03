@@ -134,7 +134,22 @@ router.post('/release/filte', async (req, res) => {
         // 分别是 文件数据，input数据，用户数据
         let { FormDataList, inputData, UserDat } = req.body
 
+
+
         let imgUrlList = await ImgUpdate(FormDataList)
+        console.log("调用者", imgUrlList);
+
+
+        if (imgUrlList.length < 0) {
+            return res.status(400).json({
+                code: 400,
+                message: "发布失败，请重试",
+                result: {
+                    message: "发布失败，请重试",
+                },
+            })
+        }
+
 
         // 设计然后加入用户id进行连表查询
         let cat = await Cat.create({
