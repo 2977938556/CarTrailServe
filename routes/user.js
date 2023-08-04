@@ -5,6 +5,11 @@ const { v1 } = require('uuid')
 const path = require('path')
 const fs = require('fs');
 const { GetIp } = require('../utils/https.js')
+const { ApplyFor } = require('../models/Adopt.js')
+const Cat = require('../models/Cat.js');
+const { type } = require('os');
+const Collect = require('../models/Collect.js')
+const { delay } = require('../utils/UniversalFn.js')// 通用函数
 
 
 
@@ -38,7 +43,7 @@ async function PushImg(imgBase64, types) {
 }
 
 
-// 修改用户头像和名称
+// 修改用户头像和名称[待修改]
 router.post('/user/modifyusers', async (req, res) => {
 
     try {
@@ -137,7 +142,6 @@ router.post('/user/modifyusers', async (req, res) => {
 })
 
 
-
 // 获取用户数据模块
 router.get('/user/userData', async (req, res) => {
     try {
@@ -155,9 +159,9 @@ router.get('/user/userData', async (req, res) => {
         }
         return res.status(404).json({
             code: 404,
-            message: "当前账户被封禁了",
+            message: "获取数据失败",
             result: {
-                message: "当前账户被封禁了",
+                message: "获取数据失败",
                 data: null
             }
         })
@@ -174,6 +178,168 @@ router.get('/user/userData', async (req, res) => {
 
 
 })
+
+
+
+// 获取 发布【未领养，领养】 收藏 领养模块的数据
+router.post('/user/catdata', async (req, res) => {
+    try {
+        let { types = "MyPublishing", state = 'noapply', _id = "", customertype = 0
+        } = req.body
+
+        console.log(types, state, _id, customertype);
+
+
+
+
+        if (types === "" || _id === "") {
+            throw new Error('获取数据失败');
+        }
+
+        // 这里基于类型获取不同的数据
+        // 用户 cat的数据 我的收藏 我的领养 搜索的数据(用户，流浪猫) 我发布的 
+
+        //  types：类型  state：用于判断需要哪些数据  customertype  可选参数 0表示对内 1表示对内 _id:当前用户或者其他用户
+        //  
+        //  MyPublishing  我的发布 state = noapply(未领养) 默认 yesapply(已领养)
+        //  MyCollection  我的收藏 
+        //  Myadoption    我的领养 
+        //  searchfor     搜索内容 state = cat(猫帖子) 默认 user(用户)
+
+        let data = null
+
+        // 对内
+        if (customertype == 0) {
+            console.log("进来了1");
+            // 我的发布模块数据 MyPublishing
+            if (types === 'MyPublishing') {
+
+                // 我的发布 未领养
+                if (state == 'noapply') {
+                    data = await Cat.find({
+                        user_id: _id,
+                        to_examine: { $in: ["pass"] },
+                        Successful_adoption: false,
+                    }) || []
+                    // 已领养
+                } else {
+                    console.log("进来这里了04");
+                    data = await Cat.find({
+                        user_id: _id,
+                        to_examine: { $in: ["ok"] },
+                        Successful_adoption: true,
+                    }) || []
+                }
+            }
+
+            // 我的收藏模块MyCollection
+            if (types === "MyCollection") {
+                data = await Collect.findOne({ user_id: _id }).populate('user_id').populate('bookmarks.cat_id') || []
+            }
+
+            if (types === "Myadoption") {
+                data = await ApplyFor.find({ user_id: _id }).populate('user_id').populate('fuser_id').populate('cat_id') || []
+            }
+
+
+        }
+
+        // 对外
+        // if (customertype == 1) {    
+
+        // }
+
+
+
+        // if (data == null) {
+        //     throw new Error('没有数据哦');
+        // }
+
+        await delay(2000)
+        return res.status(200).json({
+            code: 200,
+            message: "获取成功",
+            result: {
+                message: "获取成功",
+                data: data
+            },
+        });
+
+
+    } catch (err) {
+        return res.status(400).json({
+            code: 400,
+            message: err.message || "获取数据错误",
+            result: {
+                message: err.message || "获取数据错误",
+                data: null
+            }
+        })
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+})
+
+
+
+// 取消收藏【批量的取消】
+router.post('/user/lovedelete', async (req, res) => {
+    try {
+        const { _id, deleteCatId = [] } = req.body;
+
+        if (_id == "" || deleteCatId.length == 0) {
+            throw new Error("删除失败")
+        }
+
+        // 查询用户的收藏数据
+        const collectData = await Collect.findOne({ user_id: _id }).populate('bookmarks.cat_id');
+
+        // 过滤出不需要删除的项
+        const updatedBookmarks = collectData.bookmarks.filter(item => !deleteCatId.includes(String(item.cat_id._id)));
+
+        // 更新收藏书签数组
+        collectData.bookmarks = updatedBookmarks;
+
+        // 保存更新后的数据到数据库
+        await collectData.save();
+
+        return res.status(200).json({
+            code: 200,
+            message: "获取成功",
+            result: {
+                message: "获取成功",
+                data: updatedBookmarks
+            },
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            code: 400,
+            message: error.message || "删除失败",
+            result: {
+                message: error.message || "删除失败",
+                data: null
+            },
+        });
+    }
+});
+
+
+
+
+
+
 
 
 module.exports = router

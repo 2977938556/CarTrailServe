@@ -15,12 +15,12 @@ router.post('/message/apply', async (req, res) => {
 
         let data = null
 
+        // 这里基于1或者2获取不同的数据
         if (Statusis == 1) {
             data = await ApplyFor.find({ fuser_id: _id }).populate('user_id').populate("cat_id").populate("fuser_id")
         } else if (Statusis == 2) {
             data = await ApplyFor.find({ user_id: _id }).populate('user_id').populate("cat_id").populate("fuser_id")
         }
-
 
 
         if (data == null) {
@@ -79,12 +79,16 @@ router.post('/message/applupush', async (req, res) => {
         }
 
 
+        // 这里判断是否有数据如果有的话就可以基于参数进行判断同意或者取消
         if (AppData && catData) {
-            if (statuss === 'ok') {
-                AppData.to_examine = 'ok'
-                catData.Successful_adoption = true
 
-                catData.to_examine = 'ok'
+            if (statuss === 'ok') {
+                AppData.to_examine = 'ok'// 状态修改为 已经领养
+                AppData.updated_at = new Date()// 更新领养时间
+
+
+                catData.Successful_adoption = true// 猫的数据修改为已领养的状态
+                catData.to_examine = 'ok'// 猫的数据修改为已领养的状态
 
             } else if (statuss === 'no') {
                 AppData.to_examine = 'nopass'

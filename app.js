@@ -49,7 +49,7 @@ const StoryRouter = require('./routes/story.js')// 猫迹故事模块
 const UploadsRouter = require('./routes/upload.js')// 上传模块【测试七牛云】
 const AcatilyRouter = require('./routes/activit.js')// 活动模块
 const GuideRouter = require('./routes/guide.js')// 养猫指南模块
-const MessageRouter = require('./models/Message.js')// 领养申请模块
+const MessageRouter = require('./routes/Message.js')// 领养申请模块
 
 
 

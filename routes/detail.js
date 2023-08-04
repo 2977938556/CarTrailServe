@@ -26,17 +26,18 @@ async function checkCollectionExists(collectionName) {
 router.get('/detail/cate', async (req, res) => {
     try {
         // 这里是查找到帖子的数据再把用户的数据也给查询出来
-        let DetailData = await Cat.findOne({ cat_id: req.query.id }).populate('user_id')
+        let DetailData = await Cat.findById(req.query.id).populate('user_id')
 
         // 这里还需要查找一条评价信息
         let commentData = await Comment.find({ CatId: DetailData._id }) || ""
 
         // 这里我们需要设置一个点击量
-        const post = await Cat.findOne({ cat_id: req.query.id });
+        const post = await Cat.findById(req.query.id);
         // 更新点击量
         post.clickCount += 1;
         // 保存数据
         await post.save();
+
 
         // 审核判断 【审核中，通过，未通过,下线，上线,删除,已完成】
         // 这里是没有该帖子的数据需要阻断后面的数据返回
@@ -52,9 +53,10 @@ router.get('/detail/cate', async (req, res) => {
         }
 
 
+
+
         // 这里我们需要获取当前登录的用户id
         let fowllow = await User.findOne({ user_id: req.user.username })
-
 
         // 这里就是查找是否有用户的关注列表如果没有那么就创建
         let FollowUser = await Follow.findOne({ user_id: fowllow._id })
@@ -68,39 +70,39 @@ router.get('/detail/cate', async (req, res) => {
 
 
 
-
-
         // 这里需要进行判断用户是否开启了历史记录开关
         let userid = req.user.username
 
+        // 这里是查询出用户的数据
         let historyFlage = await User.findOne({ user_id: userid })
 
         // 如果未true那么就需要记录用户的历史记录
         if (historyFlage?.configuration_information?.History == true) {
             // 这里是可能有用户的数据所以需要通过用户的id进行查找是否有该用户的历史记录
-            let HistoryData = await History.findOne({ user_id: req.user.username });
+            let HistoryData = await History.findOne({ user_id: historyFlage._id });
 
             // 这里是没有找到情况 新建一个新的用户任务集合并返回数据
             if (HistoryData == null) {
                 await History.create({
-                    user_id: req.user.username,
+                    user_id: historyFlage._id,// 历史记录的用户主
                     histories: [
                         {
-                            type: "SEARCH",
-                            cat_id: DetailData._id
+                            type: "SEARCH",// 记录类型
+                            cat_id: DetailData._id // 记录的帖子id
                         }
                     ],
                 })
             }
 
 
-
             // 因为前面插入数据后不会立马获取数据所以需重新获取数据
-            HistoryData = await History.findOne({ user_id: req.user.username });
+            HistoryData = await History.findOne({ user_id: historyFlage._id });
+
             // 这里是验证是否有历史记录模块的数据
-            HistoryData = await History.findOne({ user_id: req.user.username });
+            // HistoryData = await History.findOne({ user_id: req.user.username });
             // 这里就是需要基于当前提交的cat_id进行查早
-            let index = HistoryData?.histories?.findIndex(item => item.cat_id == DetailData._id)
+            let index = HistoryData?.histories?.findIndex(item => String(item.cat_id) == String(DetailData._id))
+            console.log(index, "测试模块");
 
             // 这里是表示没有找到
             if (index >= 0) {
@@ -199,6 +201,7 @@ router.get('/detail/cate', async (req, res) => {
 
 
     } catch (e) {
+        console.log(e);
         res.status(400).json({
             code: 400,
             message: "获取数据失败",
@@ -214,28 +217,15 @@ router.get('/detail/cate', async (req, res) => {
 
 // 获取用户用户收藏的数据
 router.get('/detail/collect', async (req, res) => {
-    let collect_id = v1()
-    // 这里我们先查询是否有这个集合如果没有那么就创建，如果有那么就返回数据回去，
-    let mark = await checkCollectionExists("collectschems")
+    try {
+        let collect_id = v1()
+        // 这里我们先查询是否有这个集合如果没有那么就创建，如果有那么就返回数据回去，
+        let mark = await checkCollectionExists("collectschems")
 
-    // 这里是没有收藏的集合
-    if (mark == false) {
-        // 创建集合
-        // 创建一个空的集合
-        await Collect.create({
-            collect_id: collect_id,
-            user_id: req.query.user_id,
-            bookmarks: [],
-        })
-    }
-
-    // 这里是表示有集合但是还是需要查询该用户是否有数据
-    if (mark) {
-        // 不等于的情况下
-        let CollectData = await Collect.findOne({ user_id: req.query.user_id })
-
-        // 没有该用户查询的情况
-        if (!CollectData) {
+        // 这里是没有收藏的集合
+        if (mark == false) {
+            // 创建集合
+            // 创建一个空的集合
             await Collect.create({
                 collect_id: collect_id,
                 user_id: req.query.user_id,
@@ -243,17 +233,34 @@ router.get('/detail/collect', async (req, res) => {
             })
         }
 
+        // 这里是表示有集合但是还是需要查询该用户是否有数据
+        if (mark) {
+            // 不等于的情况下
+            let CollectData = await Collect.findOne({ user_id: req.query.user_id }).populate('bookmarks.cat_id')
 
-        return res.status(200).json({
-            code: 200,
-            message: "查询成功",
-            result: {
-                message: "查询成功",
-                data: CollectData
+            // 没有该用户查询的情况
+            if (!CollectData) {
+                await Collect.create({
+                    collect_id: collect_id,
+                    user_id: req.query.user_id,
+                    bookmarks: [],
+                })
             }
-        })
 
+            return res.status(200).json({
+                code: 200,
+                message: "查询成功",
+                result: {
+                    message: "查询成功",
+                    data: CollectData
+                }
+            })
+        }
+    } catch (err) {
+        console.log(err);
     }
+
+
 
 })
 
@@ -265,49 +272,48 @@ router.post('/detail/collect', async (req, res) => {
     // 第二个是作品是否被收藏，
     // 第三个是作品的数据
     let { DetailData, cat_id, userData, collectFlage } = req.body
+
     try {
 
         // 思路大概是这样的
         // 当为false表示没有被收藏所以需要进行收藏
         // 当为true则反之，需要被删除里面的元素
         if (collectFlage == false) {
-            let ceshi = await Collect.findOne({ user_id: userData.user_id })
+            let ceshi = await Collect.findOne({ user_id: userData._id }).populate('bookmarks.cat_id')
             ceshi.bookmarks.push({
                 created_at: Date.now(),
-                user_id: DetailData.user_id.user_id,// 发布者的id
-                cat_id: DetailData.cat_id,// 发布者的帖子id
-                title: DetailData.title// 发布者的帖子标题
+                cat_id: DetailData._id,// 发布者的帖子id
             })
-
             // 持久化存储
             await ceshi.save()
+
+            let dats = await Collect.findOne({ user_id: userData._id }).populate('bookmarks.cat_id')
 
             return res.status(200).json({
                 code: 200,
                 message: "收藏成功",
                 result: {
                     message: "收藏成功",
-                    data: ceshi
+                    data: dats
                 }
             })
         }
 
-
         // 需要被删除
         if (collectFlage == true) {
             // 根据用户的id进行删除
-            let ceshi = await Collect.findOne({ user_id: userData.user_id })
-            let index = ceshi?.bookmarks.findIndex(item => item.cat_id == cat_id)
+            let ceshi = await Collect.findOne({ user_id: userData._id }).populate('bookmarks.cat_id')
+            let index = ceshi?.bookmarks.findIndex(item => item.cat_id._id == cat_id)
             ceshi.bookmarks.splice(index, 1)
-
             // 持久化存储
-            await ceshi.save()
+            let datas = await ceshi.save()
+
             return res.status(200).json({
                 code: 200,
                 message: "取消收藏成功",
                 result: {
                     message: "取消收藏成功",
-                    data: ceshi
+                    data: datas
                 }
             })
         }
@@ -385,7 +391,6 @@ router.get('/detail/recommend', async (req, res) => {
     }
 })
 
-
 // 存储评论的模块
 router.post('/detail/comment', async (req, res) => {
     try {
@@ -428,8 +433,6 @@ router.post('/detail/comment', async (req, res) => {
 
 
 })
-
-
 
 // 获取评论数据
 router.get('/detail/comment', async (req, res) => {
