@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema({
             enum: [true, false,],
             default: true,
         },// 是否开启私信
+        view_favorites: {
+            type: Boolean,
+            enum: [true, false,],
+            default: true,
+        }//查看收藏
     },
     bantimt: {
         createdTime: { type: Date },// 开始时间

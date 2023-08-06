@@ -89,6 +89,7 @@ router.post('/message/applupush', async (req, res) => {
 
                 catData.Successful_adoption = true// 猫的数据修改为已领养的状态
                 catData.to_examine = 'ok'// 猫的数据修改为已领养的状态
+                catData.updated_at = new Date()// 更新领养时间
 
             } else if (statuss === 'no') {
                 AppData.to_examine = 'nopass'
@@ -133,7 +134,14 @@ router.post('/message/myapplypush', async (req, res) => {
     try {
         let { _id, statuss, message = "默认", user_id } = req.body
 
-        let AppData = await ApplyFor.findOne({ user_id: user_id }).populate('cat_id').populate('user_id').populate('fuser_id');
+        console.log(_id, statuss, message, user_id);
+
+        let AppData = await ApplyFor.findOne({
+            $and: [
+                { user_id: user_id },
+                { cat_id: _id }
+            ]
+        }).populate('cat_id').populate('user_id').populate('fuser_id');
 
         if (AppData) {
             if (statuss === 'ok') {
@@ -150,6 +158,8 @@ router.post('/message/myapplypush', async (req, res) => {
                 });
             }
 
+
+            // 修改数据
             if (statuss === 'no') {
                 AppData.content = message
                 AppData.updated_at = new Date();

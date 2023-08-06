@@ -20,19 +20,12 @@ const HistorySchem = new mongoose.Schema({
 const History = mongoose.model('HistorySchem', HistorySchem);
 
 
-
 // 个人喜好数据
 const LikeSchem = new mongoose.Schema({
     user_id: String,
     like: { type: Array, default: [] }
 })
 const Like = mongoose.model('LikeSchem', LikeSchem)
-
-
-
-
-
-
 
 
 

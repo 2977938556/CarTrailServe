@@ -10,6 +10,8 @@ const Cat = require('../models/Cat.js');
 const { type } = require('os');
 const Collect = require('../models/Collect.js')
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
+let { History } = require('../models/CatHistory.js')
+
 
 
 
@@ -180,21 +182,19 @@ router.get('/user/userData', async (req, res) => {
 })
 
 
-
 // 获取 发布【未领养，领养】 收藏 领养模块的数据
 router.post('/user/catdata', async (req, res) => {
     try {
-        let { types = "MyPublishing", state = 'noapply', _id = "", customertype = 0
+        let { types = "MyPublishing", state = 'noapply', _id = "", customertype = 0, option = { page: 1, pageSize: 3, store: -1 }
         } = req.body
-
-        console.log(types, state, _id, customertype);
-
-
 
 
         if (types === "" || _id === "") {
             throw new Error('获取数据失败');
         }
+
+
+
 
         // 这里基于类型获取不同的数据
         // 用户 cat的数据 我的收藏 我的领养 搜索的数据(用户，流浪猫) 我发布的 
@@ -205,12 +205,14 @@ router.post('/user/catdata', async (req, res) => {
         //  MyCollection  我的收藏 
         //  Myadoption    我的领养 
         //  searchfor     搜索内容 state = cat(猫帖子) 默认 user(用户)
+        //  MyHistory     历史记录  
 
         let data = null
 
         // 对内
         if (customertype == 0) {
             console.log("进来了1");
+
             // 我的发布模块数据 MyPublishing
             if (types === 'MyPublishing') {
 
@@ -234,14 +236,40 @@ router.post('/user/catdata', async (req, res) => {
 
             // 我的收藏模块MyCollection
             if (types === "MyCollection") {
-                data = await Collect.findOne({ user_id: _id }).populate('user_id').populate('bookmarks.cat_id') || []
+                data = await Collect.findOne({ user_id: _id }).populate('user_id').populate('bookmarks.cat_id')
+                console.log(data);
             }
 
+            // 获取用户成功领养的模块Myadoption
             if (types === "Myadoption") {
                 data = await ApplyFor.find({ user_id: _id }).populate('user_id').populate('fuser_id').populate('cat_id') || []
             }
 
 
+
+
+            // 这里我们设置一些参数
+
+            // 获取用户历史记录
+            if (types === "MyHistory") {
+                page = option.page || 1
+                pageSize = option.pageSize || 3
+                store = option.store
+
+                let his = await History.findOne({ user_id: _id })
+
+                if (his == null) {
+                    throw new Error("暂时没有历史记录哦")
+                }
+
+
+
+                let { histories } = await History.findOne({ user_id: _id }).populate('histories.cat_id')
+                    .select("-user_id -_id histories") // 只选择 histories 字段
+                    .slice("histories", [(page - 1) * pageSize, pageSize]).lean().exec() // 对 histories 数组进行分页查询
+
+                data = histories
+            }
         }
 
         // 对外
@@ -267,6 +295,7 @@ router.post('/user/catdata', async (req, res) => {
 
 
     } catch (err) {
+        console.log(err);
         return res.status(400).json({
             code: 400,
             message: err.message || "获取数据错误",
@@ -336,9 +365,104 @@ router.post('/user/lovedelete', async (req, res) => {
 });
 
 
+// 清空历史记录
+router.post('/user/deletehistory', async (req, res) => {
+
+    try {
+        let { _id } = req.body
+
+
+        if (_id == "") {
+            throw new Error("删除失败")
+        }
+
+        let his = await History.findOne({ user_id: _id })
+        let deletedData = null
+        if (his != null) {
+            deletedData = await History.findOneAndDelete({ user_id: _id });
+        } else {
+            throw new Error("暂时没有历史记录哦")
+        }
+
+        return res.status(200).json({
+            code: 200,
+            message: "清空成功",
+            result: {
+                message: "清空成功",
+                data: deletedData
+            },
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            code: 400,
+            message: error.message || "删除失败",
+            result: {
+                message: error.message || "删除失败",
+                data: null
+            },
+        });
+    }
 
 
 
+
+
+
+
+})
+
+
+
+// 隐私设置
+router.post('/user/setprivacy', async (req, res) => {
+    try {
+
+        // 分别是 用户id 需要修改的隐私 需要修改的值
+        let { _id, name, value } = req.body
+        console.log(_id, name, value);
+
+        if (_id == "") {
+            throw new Error("设置失败")
+        }
+
+        let userdata = await User.findById(_id)
+
+        // 这里是修改数据
+        userdata.configuration_information[name] = !value
+
+        let data = await userdata.save()
+
+
+        return res.status(200).json({
+            code: 200,
+            message: "设置成功",
+            result: {
+                message: "设置成功",
+                data: data
+            },
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            code: 400,
+            message: error.message || "设置失败",
+            result: {
+                message: error.message || "设置失败",
+                data: null
+            },
+        });
+    }
+
+
+
+
+
+
+
+})
 
 
 

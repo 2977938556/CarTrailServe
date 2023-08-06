@@ -77,7 +77,7 @@ router.get('/detail/cate', async (req, res) => {
         let historyFlage = await User.findOne({ user_id: userid })
 
         // 如果未true那么就需要记录用户的历史记录
-        if (historyFlage?.configuration_information?.History == true) {
+        if (historyFlage?.configuration_information?.History == false) {
             // 这里是可能有用户的数据所以需要通过用户的id进行查找是否有该用户的历史记录
             let HistoryData = await History.findOne({ user_id: historyFlage._id });
 
