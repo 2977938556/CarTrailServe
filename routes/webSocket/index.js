@@ -10,8 +10,6 @@ exports.UserSocket = function (io) {
 
 
 
-
-
         //01  这个是前端会自动发送信息过来[记录在线用户]
         socket.on('join', async (user_id = "") => {
 
@@ -467,6 +465,6 @@ exports.UserSocket = function (io) {
 }
 
 
-setInterval(() => {
-    console.log(userOnlones);
-}, 5000)
+// setInterval(() => {
+//     console.log(userOnlones);
+// }, 5000)

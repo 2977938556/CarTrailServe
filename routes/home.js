@@ -9,6 +9,8 @@ const { delay } = require('../utils/UniversalFn.js');// 通用函数
 const { GetDaat, GetQuery } = require('../utils/sh.js')// 获取数据模块和设置查询参数模块
 const { Activity, Participant } = require('../models/Activit.js')// 分别是一个活动一个是用户报名的模块
 const mongoose = require('mongoose');
+const { ApplyFor } = require('../models/Adopt.js')
+
 
 const carouselData = [
     {
@@ -172,6 +174,82 @@ router.post('/home/recommend', async (req, res) => {
 
 })
 
+
+
+// 获取领养排行版的数据
+router.post('/home/lyphlist', async (req, res) => {
+    try {
+        let { _id } = req.body
+
+
+        let userApply = await ApplyFor.find({ user_id: _id }).populate('user_id') || []
+
+        let dataMx = await ApplyFor.aggregate([
+            {
+                $group: {
+                    _id: "$user_id",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: {
+                    count: -1
+                }
+            },
+            {
+                $limit: 10
+            },
+            {
+                $lookup: {
+                    from: "users", // 用户表的名称
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "user"
+                }
+            },
+            {
+                $unwind: "$user"
+            },
+            {
+                $project: {
+                    user: 1,
+                    count: 1
+                }
+            }
+        ])
+
+
+        if (!userApply || !dataMx) {
+            throw new Error("获取排行失败")
+        }
+
+
+        return res.status(200).json({
+            code: 200,
+            message: "获取排行榜成功",
+            result: {
+                message: "获取排行榜成功",
+                userApply,
+                dataMx
+            }
+        })
+
+
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            code: 400,
+            message: error.message || "设置失败",
+            result: {
+                message: error.message || "设置失败",
+                data: null
+            },
+        });
+    }
+
+
+
+})
 
 module.exports = router;
 
