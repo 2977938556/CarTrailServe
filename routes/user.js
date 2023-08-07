@@ -11,6 +11,7 @@ const { type } = require('os');
 const Collect = require('../models/Collect.js')
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
 let { History } = require('../models/CatHistory.js')
+const { Follow } = require('../models/FollowUser.js')
 
 
 
@@ -147,8 +148,21 @@ router.post('/user/modifyusers', async (req, res) => {
 // 获取用户数据模块
 router.get('/user/userData', async (req, res) => {
     try {
-        let { _id } = req.query
+        let { _id = "" } = req.query
+
+
+        if (_id == "") {
+            throw new Error('获取数据失败')
+        }
+
         let data = await User.findById(_id)
+
+
+        if (!data) {
+            throw new Error('用户不存在');
+        }
+
+
         if (data !== null) {
             return res.status(200).json({
                 code: 200,
@@ -167,15 +181,17 @@ router.get('/user/userData', async (req, res) => {
                 data: null
             }
         })
-    } catch (err) {
-        return res.status(404).json({
-            code: 404,
-            message: "服务器错误",
+
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            code: 400,
+            message: error.message || "获取失败",
             result: {
-                message: "服务器错误",
+                message: error.message || "获取失败",
                 data: null
-            }
-        })
+            },
+        });
     }
 
 
@@ -192,6 +208,15 @@ router.post('/user/catdata', async (req, res) => {
         if (types === "" || _id === "") {
             throw new Error('获取数据失败');
         }
+
+        let UserList = await User.findById(_id)
+
+
+        if (!UserList) {
+            throw new Error('用户不存在');
+        }
+
+
 
 
 
@@ -211,7 +236,6 @@ router.post('/user/catdata', async (req, res) => {
 
         // 对内
         if (customertype == 0) {
-            console.log("进来了1");
 
             // 我的发布模块数据 MyPublishing
             if (types === 'MyPublishing') {
@@ -245,9 +269,6 @@ router.post('/user/catdata', async (req, res) => {
                 data = await ApplyFor.find({ user_id: _id }).populate('user_id').populate('fuser_id').populate('cat_id') || []
             }
 
-
-
-
             // 这里我们设置一些参数
 
             // 获取用户历史记录
@@ -263,7 +284,6 @@ router.post('/user/catdata', async (req, res) => {
                 }
 
 
-
                 let { histories } = await History.findOne({ user_id: _id }).populate('histories.cat_id')
                     .select("-user_id -_id histories") // 只选择 histories 字段
                     .slice("histories", [(page - 1) * pageSize, pageSize]).lean().exec() // 对 histories 数组进行分页查询
@@ -273,9 +293,30 @@ router.post('/user/catdata', async (req, res) => {
         }
 
         // 对外
-        // if (customertype == 1) {    
+        if (customertype == 1) {
+            // ta的发布模块
+            if (types === 'MyPublishing') {
+                // 我的发布 未领养
+                data = await Cat.find({
+                    user_id: _id,
+                    to_examine: { $in: ["pass"] },
+                    Successful_adoption: false,
+                }) || []
+            }
 
-        // }
+
+
+            // ta的收藏模块MyCollection
+            if (types === "MyCollection") {
+                data = await Collect.findOne({ user_id: _id }).populate('user_id').populate('bookmarks.cat_id')
+            }
+
+
+            // 获取用户成功领养的模块Myadoption
+            if (types === "Myadoption") {
+                data = await ApplyFor.find({ user_id: _id }).populate('user_id').populate('fuser_id').populate('cat_id') || []
+            }
+        }
 
 
 
@@ -283,7 +324,9 @@ router.post('/user/catdata', async (req, res) => {
         //     throw new Error('没有数据哦');
         // }
 
-        await delay(2000)
+
+
+        await delay(100)
         return res.status(200).json({
             code: 200,
             message: "获取成功",
@@ -319,8 +362,6 @@ router.post('/user/catdata', async (req, res) => {
 
 
 })
-
-
 
 // 取消收藏【批量的取消】
 router.post('/user/lovedelete', async (req, res) => {
@@ -414,7 +455,6 @@ router.post('/user/deletehistory', async (req, res) => {
 })
 
 
-
 // 隐私设置
 router.post('/user/setprivacy', async (req, res) => {
     try {
@@ -463,6 +503,42 @@ router.post('/user/setprivacy', async (req, res) => {
 
 
 })
+
+
+// 获取关注总数
+router.post('/user/gzmax', async (req, res) => {
+    try {
+        let { _id } = req.body
+        const followerCount = await Follow.countDocuments({ 'follow.follow_id': _id });
+
+        return res.status(200).json({
+            code: 200,
+            message: "清空成功",
+            result: {
+                message: "清空成功",
+                data: followerCount
+            },
+        });
+
+
+
+    } catch (err) {
+        return res.status(400).json({
+            code: 400,
+            message: "获取失败",
+            result: {
+                message: "获取失败",
+                data: null
+            },
+        });
+    }
+
+
+
+
+
+})
+
 
 
 

@@ -637,8 +637,6 @@ router.get('/detail/follows', async (req, res) => {
                 data: followList || [],
             }
         })
-
-
     } catch (e) {
         return res.status(400).json({
             code: 400,

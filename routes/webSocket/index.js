@@ -1,5 +1,6 @@
 // 导入保存在线用户数据的模块
 let { Online, Frien, Message, BlackList } = require('../../models/WebSocket')
+let User = require('../../models/User.js')
 const mongoose = require('mongoose');
 
 let userOnlones = {}
@@ -86,7 +87,7 @@ exports.UserSocket = function (io) {
 
         //02 这里是点击私聊按钮的时候【相当于添加好友】
         socket.on('frienMessage', async ({ user_id, friends }) => {
-
+            console.log(user_id, friends);
 
             // 这里查询当前是否有好友状态
             let chat = await Frien.findOne({
@@ -97,16 +98,17 @@ exports.UserSocket = function (io) {
             });
 
 
-            // 没有的情况 就新建一个消息【此时这个好友状态还是单项的因为只有发送了第一条信息才算】
+
+
+            // // // 没有的情况 就新建一个消息【此时这个好友状态还是单项的因为只有发送了第一条信息才算】
             if (chat == null) {
                 await Frien.create({
                     user_id: user_id,
                     fuser_id: friends
                 })
-
             }
 
-            // 返回一个状态给前端进行跳转页面
+            // // 返回一个状态给前端进行跳转页面
             socket.emit('frienMessage_isok', { vavle: true, friends: friends });
 
             // let res = await BlackList.findOne({
@@ -119,8 +121,6 @@ exports.UserSocket = function (io) {
             // if (res != null) {
             //     socket.emit('blackList_data', { vavle: true, data: res });
             // }
-
-
 
 
         })
@@ -328,6 +328,10 @@ exports.UserSocket = function (io) {
         // 基于当前获取聊天数据
         socket.on('getmessage_detail', async ({ user_id, fuser_id }) => {
 
+
+            let UserDats = await User.findById(fuser_id)
+
+
             // 获取当前私信的聊天数据
             let ssss = await Frien.findOne({
                 $and: [
@@ -358,9 +362,9 @@ exports.UserSocket = function (io) {
             let result = await Online.findOne({ user_id: fuser_id }).populate('user_id')
 
             // 将信息推送给发送方
-            socket.emit('getmessage_deatil_data', ssss)
+            socket.emit('getmessage_deatil_data', ssss, UserDats)
             // 将信息推送给接收方
-            socket.to(result.wsid).emit('getmessage_deatil_data', ssss)
+            socket.to(result.wsid).emit('getmessage_deatil_data', ssss, UserDats)
 
         })
 

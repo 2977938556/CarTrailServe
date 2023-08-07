@@ -18,17 +18,17 @@ const userSchema = new mongoose.Schema({
         History: {
             type: Boolean,
             enum: [true, false,],
-            default: true,
+            default: false,
         },// 是否开启历史记录
         private_letter: {
             type: Boolean,
             enum: [true, false,],
-            default: true,
+            default: false,
         },// 是否开启私信
         view_favorites: {
             type: Boolean,
             enum: [true, false,],
-            default: true,
+            default: false,
         }//查看收藏
     },
     bantimt: {
