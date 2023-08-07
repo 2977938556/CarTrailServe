@@ -145,6 +145,9 @@ router.get('/mjgs/storydetail', async (req, res) => {
 
         let detail = await Story.findById({ _id: _id }).populate('user_id')
 
+        detail.clickCount++
+
+        await detail.save()
 
         return res.status(200).json({
             code: 200,

@@ -8,7 +8,7 @@ router.get('/ymzn/guide', async (req, res) => {
     try {
 
         let { page = 1, pageSize = 3, store = -1 } = req.query
-        let data = await Guide.find().populate('user_id').sort({ updated_at: store }).skip((page - 1) * pageSize).limit(pageSize);
+        let data = await Guide.find({ to_examine: 'pass' }).populate('user_id').sort({ updated_at: store }).skip((page - 1) * pageSize).limit(pageSize);
 
         res.status(201).json({
             code: 201,

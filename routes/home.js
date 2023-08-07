@@ -10,7 +10,7 @@ const { GetDaat, GetQuery } = require('../utils/sh.js')// 获取数据模块和�
 const { Activity, Participant } = require('../models/Activit.js')// 分别是一个活动一个是用户报名的模块
 const mongoose = require('mongoose');
 const { ApplyFor } = require('../models/Adopt.js')
-
+const { Follow } = require('../models/FollowUser.js')
 
 const carouselData = [
     {
@@ -91,10 +91,53 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
                     message: "数据获取失败",
                     valve: false
                 })
+
             }
         }
 
         if (CatRecommendBar == "A") {
+            // 这里是需要迹
+
+            Follow.findOne({ user_id: userData._id })
+                .populate('follow.follow_id') // 使用populate方法关联到Cat模型
+                .exec((err, follow) => {
+                    if (err) {
+                        console.error('查询关注用户时发生错误:', err);
+                        return;
+                    }
+
+                    if (!follow) {
+                        console.log('未找到关注用户的信息');
+                        return;
+                    }
+
+                    // 获取关注用户的ID数组
+                    const followUserIds = follow.follow.map(f => f.follow_id._id);
+
+                    // 使用关注用户ID数组查询对应的帖子
+                    Cat.find({ user_id: { $in: followUserIds }, to_examine: 'pass' }).sort({ updated_at: stores }).skip((page - 1) * pageSize).limit(pageSize)
+                        .exec((err, posts) => {
+                            if (err) {
+                                reject({
+                                    result: [],
+                                    message: "数据获取失败",
+                                    valve: false
+                                })
+
+                            }
+                            return reolve({
+                                result: posts,
+                                message: "数据获取成功",
+                                valve: true
+                            })
+                        });
+                });
+
+
+
+
+
+
 
         }
     })
@@ -121,7 +164,17 @@ router.post('/home/recommend', async (req, res) => {
     let { CatRecommendBar = "B" } = req.body;
     try {
         if (CatRecommendBar == "A") {
-            GetHomeRecommend({ ...req.body }).then(value => {
+            let { result, total, pageCount } = await GetHomeRecommend({ ...req.body })
+            await delay(1000)
+            return res.status(200).json({
+                code: 200,
+                message: "数据返回成功",
+                result: {
+                    message: "数据返回成功",
+                    data: result,
+                    total,
+                    pageCount,
+                }
             })
         }
 

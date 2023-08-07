@@ -655,6 +655,8 @@ router.post('/detail/follows', async (req, res) => {
 
     try {
         let { user_id, follow_id } = req.body
+
+
         // 需要提供当前登录的用户id和当前需要关注的用户id
         // 这里是判断用户是否是关注自己的情况
         if (user_id == follow_id) {

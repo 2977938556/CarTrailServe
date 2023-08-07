@@ -50,6 +50,7 @@ const UploadsRouter = require('./routes/upload.js')// 上传模块【测试七�
 const AcatilyRouter = require('./routes/activit.js')// 活动模块
 const GuideRouter = require('./routes/guide.js')// 养猫指南模块
 const MessageRouter = require('./routes/Message.js')// 领养申请模块
+const SearchHistory = require('./routes/search.js')// 搜索模块
 
 
 
@@ -84,7 +85,9 @@ app.use('/api', StoryRouter)// 上传故事 用户删除模块
 app.use('/api', UploadsRouter)// 上传模块
 app.use('/api', AcatilyRouter)// 活动模块
 app.use('/api', GuideRouter)// 养猫指南模块
-app.use('/api', MessageRouter)
+app.use('/api', MessageRouter)// 信息模块
+app.use('/api', SearchHistory)// 信息模块
+
 
 
 
