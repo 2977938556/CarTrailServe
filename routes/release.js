@@ -137,8 +137,6 @@ router.post('/release/filte', async (req, res) => {
 
 
         let imgUrlList = await ImgUpdate(FormDataList)
-        console.log("调用者", imgUrlList);
-
 
         if (imgUrlList.length < 0) {
             return res.status(400).json({

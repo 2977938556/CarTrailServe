@@ -12,6 +12,7 @@ const Collect = require('../models/Collect.js')
 const { delay } = require('../utils/UniversalFn.js')// 通用函数
 let { History } = require('../models/CatHistory.js')
 const { Follow } = require('../models/FollowUser.js')
+const { ImgUpdate } = require('../utils/ImgUpdate.js')
 
 
 
@@ -50,20 +51,34 @@ async function PushImg(imgBase64, types) {
 router.post('/user/modifyusers', async (req, res) => {
 
     try {
-        let { username, slogin, imgBase64, imgtype } = req.body.SubmitData
+        let { FormDataList, inputData } = req.body
 
-        // 这里可以将数据库中的数据给判断是否需要修改这里通过查询用户的id进行找到用户的id
         const userDat = await User.findOne({ user_id: req.user.username })
 
 
-        // 这里我们需要判断是否有相同名称的用户
-        const user_flage = await User.findOne({ username: username })
+        let imgList = null
+
+        // 这里判断是否需要修改头像
+        if (FormDataList[0].size > 0) {
+            imgList = await ImgUpdate(FormDataList)
+            userDat.bgimgUrl = imgList[0]
+            console.log(userDat.bgimgUrl);
+            if (userDat.bgimgUrl == "") {
+                userDat.bgimgUrl = 'https://img.js.design/assets/img/64d19e663e75e479d103acbd.png#475edcba57aa3cb347f79daffb2165e4'
+            }
+        }
+
+        // 这里需要进行判断是否有相同的用户名称
+        const user_flage = await User.findOne({ username: inputData.username })
 
 
+        // 这里是需要修啊给
+        if (user_flage == null || userDat.username == user_flage.username) {
+            userDat.username = inputData.username || userDat.username
+            userDat.slogin = inputData.slogin || userDat.slogin
+            await userDat.save()
 
-        // 这里是是需要进行判断是否有相同名称的
-        // 这里就是说如果用户找到了那么就是找到了其他的用户有当前名称所以不能修改
-        if (user_flage != null && user_flage?.user_id != req.user.username) {
+        } else {
             return res.status(400).json({
                 code: 400,
                 message: "用户名称被使用",
@@ -76,66 +91,30 @@ router.post('/user/modifyusers', async (req, res) => {
 
 
 
-
-        if (user_flage == null) {
-            userDat.username = username || userDat.username
-            userDat.slogin = slogin || userDat.slogin
-            await userDat.save()
-        }
-
-
-
-
-
-        // 这是判断是否是需要修改图片
-        // 假设用户上传了一张新的头像那么用户
-        if (imgBase64 != null) {
-            const filename = userDat.bgimgUrl.split('/').pop();// 这里我们截取出用户的数据
-
-
-            let { imgUrl, savePath } = await PushImg(imgBase64, imgtype)
-
-            // 这里就是需要判断是否需要进行删除掉旧的头像
-            if (userDat.bgimgUrl != "https://img.js.design/assets/img/6437f726bacae957a1524acb.png") {
-                if (fs.existsSync(`${savePath}\\${filename}`)) {
-                    fs.unlink(`${savePath}\\${filename}`, (err, data) => {
-                        if (err) throw err;
-                    });
-                }
-            }
-
-
-            console.log(imgUrl);
-
-            userDat.bgimgUrl = imgUrl
-
-
-            await userDat.save()
-
-        }
+        let s = await userDat.save()
 
 
         // 这里返回用户成功修改后的数据
+        await delay(1000)
         return res.status(200).json({
             code: 200,
             message: "修改成功",
             result: {
                 message: "修改成功",
-                data: userDat
+                data: s
             },
         });
 
 
     } catch (err) {
         console.log(err);
-        return res.status(400).json({
+        res.status(400).json({
             code: 400,
-            message: "修改失败",
+            message: err.message || "修改失败",
             result: {
-                message: "修改失败",
-                data: null
+                message: err.message || "修改失败",
             },
-        });
+        })
     }
 
 
@@ -519,8 +498,6 @@ router.post('/user/gzmax', async (req, res) => {
                 data: followerCount
             },
         });
-
-
 
     } catch (err) {
         return res.status(400).json({

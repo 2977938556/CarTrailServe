@@ -97,18 +97,23 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
 
         if (CatRecommendBar == "A") {
             // 这里是需要迹
-
             Follow.findOne({ user_id: userData._id })
                 .populate('follow.follow_id') // 使用populate方法关联到Cat模型
                 .exec((err, follow) => {
                     if (err) {
-                        console.error('查询关注用户时发生错误:', err);
-                        return;
+                        return reject({
+                            result: [],
+                            message: "数据获取失败",
+                            valve: false
+                        })
                     }
 
                     if (!follow) {
-                        console.log('未找到关注用户的信息');
-                        return;
+                        return reolve({
+                            result: [],
+                            message: "数据获取成功",
+                            valve: true
+                        })
                     }
 
                     // 获取关注用户的ID数组
@@ -117,6 +122,7 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
                     // 使用关注用户ID数组查询对应的帖子
                     Cat.find({ user_id: { $in: followUserIds }, to_examine: 'pass' }).sort({ updated_at: stores }).skip((page - 1) * pageSize).limit(pageSize)
                         .exec((err, posts) => {
+                            console.log(posts);
                             if (err) {
                                 reject({
                                     result: [],
@@ -195,6 +201,7 @@ router.post('/home/recommend', async (req, res) => {
 
         if (CatRecommendBar == "C") {
             let { result, total, pageCount } = await GetHomeRecommend({ ...req.body })
+            console.log(result, total, pageCount);
             await delay(1000)
             return res.status(200).json({
                 code: 200,
@@ -233,6 +240,7 @@ router.post('/home/lyphlist', async (req, res) => {
         let { _id } = req.body
 
 
+        // 获取当前领养的数量
         let userApply = await ApplyFor.find({ user_id: _id }).populate('user_id') || []
 
         let dataMx = await ApplyFor.aggregate([
@@ -267,13 +275,14 @@ router.post('/home/lyphlist', async (req, res) => {
                     count: 1
                 }
             }
-        ])
+        ]) || []
 
 
+
+        // 获取当前领养前10的用户数据
         if (!userApply || !dataMx) {
             throw new Error("获取排行失败")
         }
-
 
         return res.status(200).json({
             code: 200,
@@ -301,6 +310,10 @@ router.post('/home/lyphlist', async (req, res) => {
 
 
 })
+
+
+
+
 
 module.exports = router;
 

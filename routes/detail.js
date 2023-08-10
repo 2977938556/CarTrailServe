@@ -625,10 +625,15 @@ router.get('/detail/commentdetail', async (req, res) => {
 router.get('/detail/follows', async (req, res) => {
     // 当前登录的用户
     let fowllow = await User.findOne({ user_id: req.user.username })
-
+    let followList = null;
     try {
         // 这里是通过id进行查询用户的数据
-        let followList = await Follow.findOne({ user_id: fowllow._id })
+        followList = await Follow.findOne({ user_id: fowllow._id }) || []
+
+        if (followList == null) {
+            followList = []
+        }
+
         return res.status(200).json({
             code: 200,
             message: "返回数据成功",
@@ -638,6 +643,7 @@ router.get('/detail/follows', async (req, res) => {
             }
         })
     } catch (e) {
+        console.log(e);
         return res.status(400).json({
             code: 400,
             message: "返回数据失败",
@@ -657,6 +663,9 @@ router.post('/detail/follows', async (req, res) => {
         let { user_id, follow_id } = req.body
 
 
+        console.log(user_id, follow_id);
+
+
         // 需要提供当前登录的用户id和当前需要关注的用户id
         // 这里是判断用户是否是关注自己的情况
         if (user_id == follow_id) {
@@ -670,11 +679,19 @@ router.post('/detail/follows', async (req, res) => {
             })
         }
 
-
+        let followUser = null
 
 
         // // 先查询是否有当前用户
-        let followUser = await Follow.findOne({ user_id: user_id })
+        followUser = await Follow.findOne({ user_id: user_id })
+
+
+        if (followUser == null) {
+            followUser = await Follow.create({
+                user_id: user_id,
+                follow: [],
+            });
+        }
 
         let index = followUser.follow.findIndex(item => item?.follow_id == follow_id)
         let followUserCopy = []
@@ -711,6 +728,7 @@ router.post('/detail/follows', async (req, res) => {
 
 
     } catch (err) {
+        console.log(err);
         return res.status(400).json({
             code: 400,
             message: "关注失败",

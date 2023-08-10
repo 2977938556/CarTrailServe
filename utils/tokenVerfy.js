@@ -6,7 +6,7 @@ const User = require('../models/User.js')
 
 
 // 白名单
-let whiteList = ['/user/login', '/user/register', '/bg/login']
+let whiteList = ['/user/login', '/user/register', '/bg/login', '/bg/register']
 exports.authMiddleware = (req, res, next) => {
 
 

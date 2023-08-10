@@ -56,8 +56,13 @@ const SearchHistory = require('./routes/search.js')// 搜索模块
 
 //后端路由
 const BgLogin = require('./routes/background/login.js')// 后端登录
-const { sh_llmgl, sh_user } = require('./routes/background/sh.js');// 后端流浪猫审核
+const Bgregster = require('./routes/background/register.js')// 后端登录
+const { sh_llmgl, echarts } = require('./routes/background/sh.js');// 后端流浪猫审核
+const BgConfig = require('./routes/background/config.js')// 配置模块
+
+
 const { Socket } = require('socket.io');
+
 
 
 // 允许跨域
@@ -91,6 +96,7 @@ app.use('/api', SearchHistory)// 信息模块
 
 
 
+
 // 配置模块
 require('./utils/config..js')
 
@@ -99,9 +105,10 @@ require('./utils/config..js')
 
 // 后台管理模块
 app.use('/api', BgLogin)// 后端登录
-// app.use('/api', ShLlmGl)// 审核流浪猫管理
-app.use('/api', sh_llmgl)
-app.use('/api', sh_user)
+app.use('/api', sh_llmgl)// 审核模块
+app.use('/api', Bgregster)// 注册
+app.use('/api', echarts)// 注册
+app.use('/api', BgConfig)// 注册
 
 
 

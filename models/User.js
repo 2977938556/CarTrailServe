@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    user_id: { type: String, required: true }, // 用户id 使用uuid进行生成
-    username: { type: String, required: true }, // 用户名称
-    password: { type: String, required: true },// 用户密码（需要加密）
-    mobile: { type: String, required: true },// 用户手机号
+    user_id: { type: String }, // 用户id 使用uuid进行生成
+    username: { type: String }, // 用户名称
+    password: { type: String },// 用户密码（需要加密）
+    mobile: { type: String },// 用户手机号
     slogin: { type: String, default: "领养替代购买" },// 用户标语
-    bgimgUrl: { type: String, default: 'https://img.js.design/assets/img/6437f726bacae957a1524acb.png' },// 用户头像
+    bgimgUrl: { type: String, default: 'https://img.js.design/assets/img/64d19e663e75e479d103acbd.png#475edcba57aa3cb347f79daffb2165e4' },// 用户头像
     created_at: { type: Date, default: Date.now }, // 用户注册时间
     role: {
         type: String,

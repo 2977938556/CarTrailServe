@@ -13,7 +13,7 @@ const ApplyForSchema = new mongoose.Schema({
         enum: ['examine', 'ok', 'nopass', 'delete'],
         default: 'examine'
     },// 审核判断 【待审核,同意领养通过，不同意,删除】
-    created_at: { type: Date, default: Date.now },// 创建时间
+    created_at: { type: Date, default: Date.now }, // 用户注册时间
     updated_at: { type: Date, default: Date.now },// 更新时间
 })
 
