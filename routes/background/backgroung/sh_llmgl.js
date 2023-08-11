@@ -55,7 +55,6 @@ const { GetDaat, GetQuery } = require('../../../utils/sh.js')
 
 
 async function PushData({ modules, _id, type }) {
-    console.log(type, "类型模块");
     try {
         if (_id === "" || type == "") {
             return Promise.reject("修改失败"); // 抛出错误，不中止程序
@@ -101,7 +100,6 @@ async function GetDataId({ modules, id }) {
 }
 
 
-
 // 添加活动活动模块 待修改
 async function PushImg(imgBase64, types, savea, saveb) {
     let savePath = path.join(__dirname, `${savea}`);// 当前储存的地址
@@ -127,7 +125,6 @@ async function PushImg(imgBase64, types, savea, saveb) {
         })
     })
 }
-
 
 // 这个是提供帖子数据的
 router.post('/bg/shdata', async (req, res) => {
@@ -258,7 +255,6 @@ router.get('/bg/catiddata', async (req, res) => {
     try {
         // 获取当前的帖子的id
         let { id, typeofs } = req.query;
-        console.log(id, typeofs);
 
         let data = null
 
@@ -376,24 +372,29 @@ router.post('/bg/catpass', async (req, res) => {
 
 
 })
+
+
 // 存储活动数据
 router.post('/bg/activity', async (req, res) => {
-    let { base64, imgType, title, adds, content, time, people } = req.body
-
     try {
+        let { FormDataList = "", inputData = "" } = req.body
+
+        let imgList = await ImgUpdate(FormDataList)
+
+        if (FormDataList == "" || inputData == "") {
+            throw new Error("上传失败，参数错误")
+        }
+
         let users = await User.findOne({ user_id: req.user.username })
-
-
-        let { imgUrl } = await PushImg(base64, imgType, '../../../public/uploads/activity', '/public/uploads/activity')
 
         let activity = new Activity({
             user_id: users._id,
-            title,
-            content,
-            adds,
-            people,
-            time,
-            imageUrl: [imgUrl],// 图片数据存储的是图片地址
+            title: inputData.title,
+            content: inputData.content,
+            adds: inputData.adds,
+            people: inputData.people,
+            time: inputData.time,
+            imageUrl: imgList,// 图片数据存储的是图片地址
         })
 
         let data = await activity.save()
@@ -407,17 +408,71 @@ router.post('/bg/activity', async (req, res) => {
             }
         })
 
+
+
     } catch (err) {
         console.log(err);
-        return res.status(404).json({
-            code: 404,
-            message: "发布失败",
+        res.status(400).json({
+            code: 400,
+            message: err.message || "发布失败，请重试",
             result: {
-                message: "发布失败",
-                data: null,
-            }
+                message: err.message || "发布失败，请重试",
+            },
         })
     }
+
+
+
+
+
+
+
+    // title: '【猫迹自愿者活动】割蛋行动 嘿嘿嘿',
+    // adds: '江西省赣州市芙蓉江新区',
+    // content: '此次活动主要是捕捉野外的流浪猫，进行割蛋行动，此次活动有一定的危险性，计划为10个人',
+    // time: [ '2023-08-09T04:00:00.000Z', '2023-08-31T04:00:00.000Z' ],
+    // people: 10,
+
+
+
+    // try {
+    //     let users = await User.findOne({ user_id: req.user.username })
+
+
+    //     let { imgUrl } = await PushImg(base64, imgType, '../../../public/uploads/activity', '/public/uploads/activity')
+
+    //     let activity = new Activity({
+    //         user_id: users._id,
+    //         title,
+    //         content,
+    //         adds,
+    //         people,
+    //         time,
+    //         imageUrl: [imgUrl],// 图片数据存储的是图片地址
+    //     })
+
+    //     let data = await activity.save()
+
+    //     return res.status(201).json({
+    //         code: 201,
+    //         message: "数据返回成功",
+    //         result: {
+    //             message: "数据返回成功",
+    //             data: data,
+    //         }
+    //     })
+
+    // } catch (err) {
+    //     console.log(err);
+    //     return res.status(404).json({
+    //         code: 404,
+    //         message: "发布失败",
+    //         result: {
+    //             message: "发布失败",
+    //             data: null,
+    //         }
+    //     })
+    // }
 
 
 

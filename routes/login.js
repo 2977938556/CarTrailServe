@@ -12,7 +12,6 @@ router.post('/user/login', (req, res) => {
     // 如果没有查到那么就提示登录
     // 如果查询到了那么就将当前的密码进行比对
     // 明天早上完成加油啦 FeiMao@110
-
     try {
         // 查询用户
         User.findOne({
@@ -31,11 +30,33 @@ router.post('/user/login', (req, res) => {
                     },
                 })
             } else {
+
+                if (users.role === 'ban') {
+                    res.status(401).json({
+                        code: 401,
+                        message: "当前账户被封禁了",
+                        result: {
+                            message: "当前账户被封禁了",
+                            user: null,
+                        },
+                    })
+                }
+
+
+                if (users.role === 'delete') {
+                    res.status(401).json({
+                        code: 401,
+                        message: "当前账户不存在",
+                        result: {
+                            message: "当前账户不存在",
+                            user: null,
+                        },
+                    })
+                }
+
+
                 // 对比提交的密码和数据中的密码
                 decryptPssword(password, users.password).then(async (value) => {
-
-
-
                     res.status(201).json({
                         code: 201,
                         message: "登录成功",

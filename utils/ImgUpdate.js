@@ -54,10 +54,9 @@ exports.ImgUpdate = async (ImgDataArray) => {
             return new Promise((resolve, reject) => {
                 formUploader.put(uploadToken, item.imgName, item.buffer, putExtra, function (respErr, respBody, respInfo) {
                     if (respErr || respInfo.statusCode !== 200) {
-                        console.log("文件上传失败");
+                        console.log("文件上传失败", respErr);
                         resolve({ success: false, error: "文件上传失败" });
                     } else {
-                        console.log(respBody.key);
                         resolve({ success: true, url: `http://${Urls}/${respBody.key}` });
                     }
                 });

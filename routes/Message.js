@@ -134,7 +134,6 @@ router.post('/message/myapplypush', async (req, res) => {
     try {
         let { _id, statuss, message = "默认", user_id } = req.body
 
-        console.log(_id, statuss, message, user_id);
 
         let AppData = await ApplyFor.findOne({
             $and: [

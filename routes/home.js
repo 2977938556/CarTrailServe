@@ -11,23 +11,12 @@ const { Activity, Participant } = require('../models/Activit.js')// 分别是一
 const mongoose = require('mongoose');
 const { ApplyFor } = require('../models/Adopt.js')
 const { Follow } = require('../models/FollowUser.js')
+const { AdverTisement, Notice } = require('../models/Config.js')
 
 const carouselData = [
-    {
-        id: 1,
-        title: '轮播图1',
-        imgUrl: 'https://n.sinaimg.cn/edu/transform/20161129/vFH5-fxycika9082742.jpg'
-    },
-    {
-        id: 2,
-        title: '轮播图2',
-        imgUrl: 'https://mobile-img-baofun.zhhainiao.com/pcwallpaper_ugc_mobile/static/6e5ac7fde3e7e67b5eb8b1aa470124cc.jpg?x-oss-process=image%2Fresize%2Cm_lfit%2Cw_640%2Ch_1138'
-    },
-    {
-        id: 3,
-        title: '轮播图2',
-        imgUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSn_9ltm95qVWV0e1Qa-IVBFb7WdR2xcmIgQ4fLrAfjYfWxZ6sdN4zFTrionvvp8NRRRzg&usqp=CAU'
-    }
+    'https://n.sinaimg.cn/edu/transform/20161129/vFH5-fxycika9082742.jpg',
+    'https://mobile-img-baofun.zhhainiao.com/pcwallpaper_ugc_mobile/static/6e5ac7fde3e7e67b5eb8b1aa470124cc.jpg?x-oss-process=image%2Fresize%2Cm_lfit%2Cw_640%2Ch_1138',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSn_9ltm95qVWV0e1Qa-IVBFb7WdR2xcmIgQ4fLrAfjYfWxZ6sdN4zFTrionvvp8NRRRzg&usqp=CAU',
 ];
 
 async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendBar = "B", userData }) {
@@ -122,7 +111,6 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
                     // 使用关注用户ID数组查询对应的帖子
                     Cat.find({ user_id: { $in: followUserIds }, to_examine: 'pass' }).sort({ updated_at: stores }).skip((page - 1) * pageSize).limit(pageSize)
                         .exec((err, posts) => {
-                            console.log(posts);
                             if (err) {
                                 reject({
                                     result: [],
@@ -154,15 +142,53 @@ async function GetHomeRecommend({ city, page, cityAddrs, pageSize, CatRecommendB
 // 400 服务器错误
 // 401 需要验证身份
 
-router.get('/home/banner', async (req, res) => {
-    await delay(3000)
+router.post('/home/banner', async (req, res) => {
 
-    // console.log(req.user);
-    res.json({
-        code: 200,
-        message: "ok",
-        result: carouselData
-    });
+    try {
+        let { type } = req.body
+
+        if (type == "") {
+            throw new Error("获取数据失败")
+        }
+
+        let query = {}
+
+        if (type != "") {
+            query = {
+                column: type,
+                to_examine: "pass",
+            }
+        }
+        let banner = await AdverTisement.find(query).sort({ weight: 1 })
+
+        if (banner.length <= 0) {
+            banner = []
+        }
+
+        await delay(500)
+        return res.status(200).json({
+            code: 200,
+            message: "数据返回成功",
+            result: {
+                message: "数据返回成功",
+                data: banner,
+            }
+        })
+
+    } catch (error) {
+        return res.status(400).json({
+            code: 400,
+            message: error.message || "获取数据失败",
+            result: {
+                message: error.message || "获取数据失败",
+                data: null
+            },
+        });
+    }
+
+
+
+
 });
 
 // 获取推荐模块
@@ -171,7 +197,7 @@ router.post('/home/recommend', async (req, res) => {
     try {
         if (CatRecommendBar == "A") {
             let { result, total, pageCount } = await GetHomeRecommend({ ...req.body })
-            await delay(1000)
+            await delay(500)
             return res.status(200).json({
                 code: 200,
                 message: "数据返回成功",
@@ -186,7 +212,7 @@ router.post('/home/recommend', async (req, res) => {
 
         if (CatRecommendBar == "B") {
             let { result, total, pageCount } = await GetHomeRecommend({ ...req.body })
-            await delay(1000)
+            await delay(500)
             return res.status(200).json({
                 code: 200,
                 message: "数据返回成功",
@@ -201,8 +227,7 @@ router.post('/home/recommend', async (req, res) => {
 
         if (CatRecommendBar == "C") {
             let { result, total, pageCount } = await GetHomeRecommend({ ...req.body })
-            console.log(result, total, pageCount);
-            await delay(1000)
+            await delay(500)
             return res.status(200).json({
                 code: 200,
                 message: "数据返回成功",
@@ -241,9 +266,13 @@ router.post('/home/lyphlist', async (req, res) => {
 
 
         // 获取当前领养的数量
-        let userApply = await ApplyFor.find({ user_id: _id }).populate('user_id') || []
-
+        let userApply = await ApplyFor.find({ user_id: _id, to_examine: 'ok' }).populate('user_id') || []
         let dataMx = await ApplyFor.aggregate([
+            {
+                $match: {
+                    to_examine: "ok"
+                }
+            },
             {
                 $group: {
                     _id: "$user_id",
@@ -275,7 +304,8 @@ router.post('/home/lyphlist', async (req, res) => {
                     count: 1
                 }
             }
-        ]) || []
+        ]) || [];
+
 
 
 
@@ -296,7 +326,6 @@ router.post('/home/lyphlist', async (req, res) => {
 
 
     } catch (error) {
-        console.log(error);
         return res.status(400).json({
             code: 400,
             message: error.message || "设置失败",

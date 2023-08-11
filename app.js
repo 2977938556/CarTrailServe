@@ -61,9 +61,6 @@ const { sh_llmgl, echarts } = require('./routes/background/sh.js');// 后端流�
 const BgConfig = require('./routes/background/config.js')// 配置模块
 
 
-const { Socket } = require('socket.io');
-
-
 
 // 允许跨域
 app.use(cors())
@@ -120,7 +117,7 @@ const PORT2 = 8200; // webSocket
 
 
 
-//  这个是ws 服务配置文件
+//  websockt 服务配置文件
 const socketIO = require('socket.io');
 const app2 = express();
 // 设置一个新的服务
@@ -148,7 +145,7 @@ app.listen(PORT1, () => {
     console.log('基础服务已经启动,请访问：localhost:3000')
 })
 
-// ws服务
+// 这个服务是websocket服务
 server2.listen(PORT2, () => {
-    console.log(`webSocket服务已经启动请访问 ${PORT2}`);
+    console.log(`webSocket服务已经启动请访问：localhost8200`);
 });

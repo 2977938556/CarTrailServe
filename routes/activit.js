@@ -9,37 +9,62 @@ const { Activity, Participant } = require('../models/Activit.js')// 分别是一
 
 // 获取猫迹活动的数据
 router.post('/home/mjhddata', async (req, res) => {
-    let { page = 1, pageSize = 10, type, searchVal = "", typeofs = "mjhd", store = 1 } = req.body
+    try {
+        let { page = 1, pageSize = 10, type, searchVal = "", typeofs = "mjhd", store = 1 } = req.body
 
-    // 传递参数获取查询条件查询条件
-    let query = GetQuery(type, searchVal)
+        if (typeofs !== "mjhd") {
+            throw new Error("获取数据失败")
+        }
 
-    let data = null
-    let total = 0
-    let pageCount = 0
 
-    // 这个是用于获取数据的模块
-    let stores = { updated_at: store }
 
-    // 这里我们做一个判断
-    if (typeofs == "mjhd") {
-        let { totals, pageCounts, datas } = await GetDaat({ modules: Activity, query, pageSize, page, stores })
-        data = datas
-        pageCounts = pageCounts
-        total = totals
+        let query = {}
 
-        // 返回数据回去
+        if (searchVal != "") {
+            const regex = new RegExp(search, "i");
+            query.title = { $regex: regex };
+        }
+
+        query.to_examine = { $in: ['progress', 'end', 'cancellation'] };
+
+
+
+        let datas = await Activity.find(query).populate('user_id').sort({ created_at: store }).skip((page - 1) * pageSize).limit(pageSize)
+        const totalCount = await Activity.countDocuments(query);
+
+        let data = datas
+        let total = totalCount
+
+        if (data.length <= 0) {
+            data = []
+        }
+
         return res.status(200).json({
             code: 200,
             message: "数据返回成功",
             result: {
                 message: "数据返回成功",
                 data: data,
-                total,
-                pageCount,
+                total: total,
             }
         })
+
+
+    } catch (err) {
+        res.status(400).json({
+            code: 400,
+            message: err.message || "获取数据失败",
+            result: {
+                message: err.message || "获取数据失败",
+            },
+        })
     }
+
+
+
+
+
+
 })
 
 // 获取活动详情页面的数据
@@ -195,7 +220,7 @@ router.get('/home/mjhdsubmit', async (req, res) => {
 
         let ParticipantData = await Participant.findOne({ user_id: _id }).populate('activities.act_id')
 
-        await delay(3000)
+        await delay(500)
         return res.status(200).json({
             code: 200,
             message: "获取成功",

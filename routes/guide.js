@@ -42,7 +42,6 @@ router.get('/ymzn/guide', async (req, res) => {
 router.get('/ymzn/guidedetail', async (req, res) => {
     try {
         let { _id } = req.query
-        console.log(_id);
         let data = await Guide.findById({ _id: _id }).populate('user_id')
         data.clickCount++
 

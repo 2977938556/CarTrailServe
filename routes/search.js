@@ -7,16 +7,13 @@ const { delay } = require('../utils/UniversalFn.js');// 通用函数
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 
+
 // 搜索内容
 router.post('/search/main', async (req, res) => {
-
-
     try {
 
         // 一个是搜索内容 一个是类型 比如是用户还是谁
         let { search = "", types, _id } = req.body
-
-
 
         if (_id == "") {
             throw new Error("获取数据失败")
@@ -31,10 +28,15 @@ router.post('/search/main', async (req, res) => {
         // 这里是查找cat 帖子模块
         if (types === 'cat') {
             searchQuery = {
-                $or: [
-                    { title: { $regex: search, $options: 'i' } },
-                    { content: { $regex: search, $options: 'i' } },
-                    { lable: { $in: [search] } } // 使用 $in 操作符匹配数组字段
+                $and: [
+                    {
+                        $or: [
+                            { title: { $regex: search, $options: 'i' } },
+                            { content: { $regex: search, $options: 'i' } },
+                            { lable: { $in: [search] } }
+                        ]
+                    },
+                    { $or: [{ to_examine: 'pass' }, { to_examine: 'ok' }] }
                 ]
             }
 
@@ -88,13 +90,6 @@ router.post('/search/main', async (req, res) => {
             }
         })
     }
-
-
-
-
-
-
-
 })
 
 // 获取所有的历史记录
@@ -135,7 +130,6 @@ router.post('/search/historyall', async (req, res) => {
 
 
 router.post('/search/deletahistory', async (req, res) => {
-    console.log("进来了");
     try {
         let { _id } = req.body
 

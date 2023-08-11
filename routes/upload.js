@@ -44,12 +44,9 @@ router.post('/upload/img', async (req, res) => {
                 throw respErr;
             }
             if (respInfo.statusCode === 200) {
-                console.log('文件上传成功:');
                 imageUrl = `http://rwyswjtk7.hn-bkt.clouddn.com/${respBody.key}`;
-                console.log(imageUrl);
             } else {
-                console.log(respErr, respBody, respInfo);
-                console.log('文件上传失败:');
+                // console.log(respErr, respBody, respInfo);
             }
         });
     }

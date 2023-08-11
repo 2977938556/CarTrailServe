@@ -32,7 +32,6 @@ router.post('/user/register', async (req, res) => {
                 // 没有查询到用户数据
                 // 手机号未注册，查询名称是否被使用
                 let usernameb = await User.findOne({ username: username })
-                console.log(usernameb);
 
                 // 有相同的名称
                 if (usernameb) {

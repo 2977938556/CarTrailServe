@@ -100,7 +100,6 @@ router.post('/echarts/applys', async (req, res) => {
     try {
 
         let { type = 'llmfb', time = 10 } = req.body
-        console.log(time);
 
         let numDays = time; // 自定义要获取的天数
         const today = new Date();
@@ -223,6 +222,28 @@ router.post('/echarts/applynook', async (req, res) => {
             }
         ]);
 
+        if (data.length <= 0) {
+            data = [
+                {
+                    data: [
+                        {
+                            "value": 0,
+                            "name": "已拒绝"
+                        },
+                        {
+                            "value": 0,
+                            "name": "待同意"
+                        },
+                        {
+                            "value": 0,
+                            "name": "已领养"
+                        }
+                    ]
+                }
+            ]
+        }
+
+
         res.status(200).json({
             code: 200,
             message: "获取数据成功",
@@ -231,6 +252,7 @@ router.post('/echarts/applynook', async (req, res) => {
                 data: data[0].data
             },
         })
+
 
 
     } catch (err) {

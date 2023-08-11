@@ -50,7 +50,6 @@ const messageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', messageSchema);
 
 
-
 // 黑名单表
 const blacklistSchema = new mongoose.Schema({
     user_id: { type: mongoose.Types.ObjectId, ref: "User", required: true },// 当前用户

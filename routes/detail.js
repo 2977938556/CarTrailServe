@@ -102,7 +102,6 @@ router.get('/detail/cate', async (req, res) => {
             // HistoryData = await History.findOne({ user_id: req.user.username });
             // 这里就是需要基于当前提交的cat_id进行查早
             let index = HistoryData?.histories?.findIndex(item => String(item.cat_id) == String(DetailData._id))
-            console.log(index, "测试模块");
 
             // 这里是表示没有找到
             if (index >= 0) {
@@ -663,9 +662,6 @@ router.post('/detail/follows', async (req, res) => {
         let { user_id, follow_id } = req.body
 
 
-        console.log(user_id, follow_id);
-
-
         // 需要提供当前登录的用户id和当前需要关注的用户id
         // 这里是判断用户是否是关注自己的情况
         if (user_id == follow_id) {
@@ -758,8 +754,6 @@ router.post('/detail/applyfor', async (req, res) => {
         // // 查询出帖子
         let CatData = await Cat.findById(_id).populate('user_id')
 
-
-        console.log(UserDat._id);
 
         // console.log(_id, CatData.user_id._id, UserDat._id);
         // { fuser_id: String(CatData.user_id._id) }

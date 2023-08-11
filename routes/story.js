@@ -82,7 +82,7 @@ router.post('/mjgs/storylist', async (req, res) => {
 
     var data = await Story.find(query).populate('user_id').sort({ updated_at: store }).skip((page - 1) * pageSize).limit(pageSize);
 
-    await delay(1000)
+    await delay(100)
 
     res.status(201).json({
         code: 201,
@@ -364,7 +364,6 @@ router.post('/mjgs/detail/hfreplay', async (req, res) => {
         // 分别是回复的内容 回复的评论id  回复的用户id
         let { content, commentId, user_id, type } = req.body
 
-        console.log(content, commentId, user_id, type);
 
         let data = await GetCommentHfreplay({ content, commentId, user_id, type })
 

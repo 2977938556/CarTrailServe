@@ -62,7 +62,6 @@ router.post('/user/modifyusers', async (req, res) => {
         if (FormDataList[0].size > 0) {
             imgList = await ImgUpdate(FormDataList)
             userDat.bgimgUrl = imgList[0]
-            console.log(userDat.bgimgUrl);
             if (userDat.bgimgUrl == "") {
                 userDat.bgimgUrl = 'https://img.js.design/assets/img/64d19e663e75e479d103acbd.png#475edcba57aa3cb347f79daffb2165e4'
             }
@@ -228,7 +227,6 @@ router.post('/user/catdata', async (req, res) => {
                     }) || []
                     // 已领养
                 } else {
-                    console.log("进来这里了04");
                     data = await Cat.find({
                         user_id: _id,
                         to_examine: { $in: ["ok"] },
@@ -240,7 +238,6 @@ router.post('/user/catdata', async (req, res) => {
             // 我的收藏模块MyCollection
             if (types === "MyCollection") {
                 data = await Collect.findOne({ user_id: _id }).populate('user_id').populate('bookmarks.cat_id')
-                console.log(data);
             }
 
             // 获取用户成功领养的模块Myadoption
@@ -440,7 +437,6 @@ router.post('/user/setprivacy', async (req, res) => {
 
         // 分别是 用户id 需要修改的隐私 需要修改的值
         let { _id, name, value } = req.body
-        console.log(_id, name, value);
 
         if (_id == "") {
             throw new Error("设置失败")

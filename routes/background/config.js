@@ -17,6 +17,7 @@ router.post('/config/guangpuhs', async (req, res) => {
         // 分别是 文件数据，input数据，用户数据
         let { FormDataList = "", inputData = "", UserDat = "" } = req.body
 
+
         if (inputData.weight > 5) {
             throw new Error("权重不能大于5")
         }
@@ -49,6 +50,7 @@ router.post('/config/guangpuhs', async (req, res) => {
                 title: inputData.title,
                 weight: inputData.weight,
                 column: inputData.column,
+                to_id: inputData.to_id,
                 pagepath: inputData.pagepath,
                 user_id: UserDat._id
             })
@@ -94,8 +96,6 @@ router.post('/config/guangaodata', async (req, res) => {
             query.title = { $regex: regex };
         }
 
-
-        console.log(stor);
 
 
 
@@ -147,7 +147,6 @@ router.post('/config/guangaodatadelete', async (req, res) => {
 
         // 删除满足条件的数据
         let ss = await AdverTisement.deleteMany({ _id: { $in: deleteIds } });
-        console.log(ss);
 
 
         let tabArraysData = await AdverTisement.find();
@@ -192,11 +191,9 @@ router.post('/config/editguangpuhs', async (req, res) => {
 
 
 
-        console.log(EditData, "测试模");
 
         // 查询出需要修改的对象
         let datas = await AdverTisement.findById(EditData._id)
-        console.log(datas);
 
 
         if (datas == null) {
@@ -239,8 +236,10 @@ router.post('/config/editguangpuhs', async (req, res) => {
         datas.weight = inputData.weight || datas.weight
         datas.column = inputData.column || datas.column
         datas.title = inputData.title || datas.title
+        datas.to_id = inputData.to_id || datas.to_id
         datas.pagepath = inputData.pagepath || datas.pagepath
         datas.user_id = inputData.user_id || datas.user_id
+
         datas.to_examine = EditData.to_examine || datas.user_id
         datas.updated_at = new Date()
 
@@ -289,6 +288,7 @@ router.post('/config/messagepush', async (req, res) => {
         }
 
 
+
         let MessageList = await Notice.find({ column: inputData.column })
 
 
@@ -303,6 +303,7 @@ router.post('/config/messagepush', async (req, res) => {
             column: inputData.column,// 所属栏目
             pagepath: inputData.pagepath,// 页面路径
             user_id: UserDat._id,// 关联到User数据集合的自动生成的id
+            to_id: inputData.to_id// 跳转的id
         })
 
         await delay(1000)
@@ -336,7 +337,6 @@ router.post('/config/messagedata', async (req, res) => {
     let { search = "", column = "home" } = req.body;
 
 
-    console.log(search, column);
     try {
         let query = {
             column: column,
@@ -403,6 +403,7 @@ router.post('/config/editmessage', async (req, res) => {
         datas.user_id = inputData.user_id || datas.user_id
         datas.to_examine = EditData.to_examine || datas.to_examine
         datas.updated_at = new Date()
+        datas.to_id = inputData.to_id || datas.to_id
 
         // // 持久化保存
         let result = await datas.save()
@@ -485,5 +486,3 @@ router.post('/config/messagedelete', async (req, res) => {
 
 
 module.exports = router
-
-
